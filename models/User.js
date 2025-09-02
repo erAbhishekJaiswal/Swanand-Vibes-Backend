@@ -33,6 +33,11 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ["user", "admin"], default: "user" },
     refreshToken: { type: String }, // optional - to store refresh token
     address: { type: String },
+    apartment: { type: String },
+    city: { type: String },
+    state: { type: String },
+    zipCode: { type: String },
+    country: { type: String },
     mobile: { type: String },
     referralCode: { type: String, unique: true },
     referredBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // parent sponsor

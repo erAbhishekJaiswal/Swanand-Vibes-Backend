@@ -1,9 +1,10 @@
 const Order = require('../models/Order');
+const Cart = require('../models/Cart');
 
 const createOrder = async (req, res) => {
   try {
     const userId = req.params.userId;
-    console.log("Creating order for user:", userId);
+    // console.log("Creating order for user:", userId);
 
     const { cartItems, itemsPrice, shippingPrice, taxPrice, totalPrice, address, apartment, city, country, email, mobile, shippingMethod, state, zipCode } = req.body;
    
@@ -24,6 +25,13 @@ const createOrder = async (req, res) => {
       },
       shippingMethod: shippingMethod,
     });
+    // remove items from cart
+    const cart = await Cart.findOne({ user: userId });
+    console.log(cart);
+    if (cart) {
+      cart.items = cart.items.filter(item => !cartItems.some(orderItem => orderItem.product === item.product));
+      await cart.save();
+    }
 
     res.status(201).json({
       success: true,

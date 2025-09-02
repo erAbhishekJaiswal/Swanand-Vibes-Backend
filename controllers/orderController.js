@@ -53,6 +53,22 @@ const getAllOrders = async (req, res) => {
     }
 };
 
+const getUserOrders = async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const orders = await Order.find({ user: userId });
+        res.status(200).json({
+            success: true,
+            data: orders,
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            error: error.message,
+        });
+    }
+};
+
 const getOrderById = async (req, res) => {
     try {
         const order = await Order.findById(req.params.id);
@@ -122,6 +138,7 @@ const deleteOrder = async (req, res) => {
 module.exports = {
     createOrder,
     getAllOrders,
+    getUserOrders,
     getOrderById,
     updateOrder,
     deleteOrder

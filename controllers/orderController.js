@@ -29,9 +29,12 @@ const createOrder = async (req, res) => {
     const cart = await Cart.findOne({ user: userId });
     console.log(cart);
     if (cart) {
+          // Remove item from cart
       cart.items = cart.items.filter(item => !cartItems.some(orderItem => orderItem.product === item.product));
       await cart.save();
     }
+    cart.items.pull(cartItems.map(item => item._id));
+    await cart.save();
 
     res.status(201).json({
       success: true,

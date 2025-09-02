@@ -14,7 +14,7 @@ const {
 router.post("/:userId", createOrder);
 router.get("/:id", getOrderById);
 router.get("/", getAllOrders);
-router.get("/:userId", getUserOrders);
+router.get("/user/:userId", getUserOrders);
 router.put("/:id", updateOrder);
 router.delete("/:id", deleteOrder);
 

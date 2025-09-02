@@ -56,6 +56,8 @@ const getAllOrders = async (req, res) => {
 const getUserOrders = async (req, res) => {
     try {
         const userId = req.params.userId;
+        console.log(`Fetching orders for user ${userId}`);
+
         const orders = await Order.find({ user: userId });
         res.status(200).json({
             success: true,

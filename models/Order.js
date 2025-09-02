@@ -21,15 +21,24 @@ const orderSchema = new mongoose.Schema(
       },
     ],
     shippingAddress: {
+      apartment: { type: String, required: false },
       address: { type: String, required: true },
       city: { type: String, required: true },
       postalCode: { type: String, required: true },
+      state: { type: String, required: true },
       country: { type: String, required: true },
     },
     paymentMethod: {
       type: String,
       required: true,
       enum: ["COD", "Razorpay", "Stripe", "Paypal"],
+      default: "Razorpay",
+    },
+    shippingMethod: {
+      type: String,
+      required: true,
+      enum: ["standard", "express", "next day"],
+      default: "standard",
     },
     paymentResult: {
       id: String,
@@ -43,6 +52,7 @@ const orderSchema = new mongoose.Schema(
     totalPrice: { type: Number, required: true },
     isPaid: { type: Boolean, default: false },
     paidAt: Date,
+    deliveryStatus: { type: String, default: "pending" },
     isDelivered: { type: Boolean, default: false },
     deliveredAt: Date,
   },

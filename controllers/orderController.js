@@ -2,7 +2,29 @@ const Order = require('../models/Order');
 
 const createOrder = async (req, res) => {
   try {
-    const order = await Order.create(req.body);
+    const userId = req.params.userId;
+    console.log("Creating order for user:", userId);
+
+    const { cartItems, itemsPrice, shippingPrice, taxPrice, totalPrice, address, apartment, city, country, email, mobile, shippingMethod, state, zipCode } = req.body;
+   
+    const order = await Order.create({
+      user: userId,
+      orderItems: cartItems,
+      itemsPrice,
+      shippingPrice,
+      taxPrice,
+      totalPrice: itemsPrice + shippingPrice + taxPrice,
+      shippingAddress: {
+        address,
+        apartment,
+        city,
+        country,
+        state,
+        postalCode: zipCode
+      },
+      shippingMethod: shippingMethod,
+    });
+
     res.status(201).json({
       success: true,
       data: order,

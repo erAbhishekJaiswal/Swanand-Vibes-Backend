@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Wallet = require("../models/Wallet");
+const Otp = require("../models/Otp");
 const { COMMISSION_LEVELS } = require("../config/commission");
 const {
   signAccessToken,
@@ -134,10 +135,33 @@ const createWallet = async (userId) => {
 // 📌 Register User
 exports.registerUser = async (req, res) => {
   try {
-    const { name, email, password, referralCode } = req.body;
+    const { name, email, otpValue, password, referralCode } = req.body;
+
+    // console.log({ name, email, otp, password, referralCode, body: req.body });
+    
     if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
+
+      const record = await Otp.findOne({ email, otp : otpValue });
+    
+      if (!record) {
+        return res.status(400).json({ error: "Invalid OTP" });
+      }
+    
+      if (record.expiresAt < new Date()) {
+        return res.status(400).json({ error: "OTP expired" });
+      }
+    
+      if (record.verified) {
+        return res.status(400).json({ error: "OTP already used" });
+      }
+    
+      // Mark OTP as verified
+      record.verified = true;
+      await record.save();
+    
+      // res.json({ message: "OTP verified successfully" });
 
     // 1. Find sponsor if referralCode exists
     let sponsor = null;

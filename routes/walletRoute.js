@@ -1,18 +1,31 @@
 // routes/walletRoutes.js
 const express = require("express");
-const { getWallet, debitWallet } = require("../controllers/walletController");
+const { getWallet, requestWithdrawal, getWithdrawalRequests,allwalletList} = require("../controllers/walletController");
 // const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
+
+router.get('/requests', 
+    // authMiddleware,
+     getWithdrawalRequests);
+     
+
+router.get('/allwallets',
+    // authMiddleware,
+     allwalletList
+)
+// Withdraw request
+router.post("/:id/withdraw-request",
+    // authMiddleware,
+    requestWithdrawal);
 
 // Get wallet balance + transactions
 router.get("/:id", 
     // authMiddleware,
      getWallet);
 
-// Withdraw request
-router.post("/withdraw",
-    // authMiddleware,
-     debitWallet);
+
+
+
 
 module.exports = router;

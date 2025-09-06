@@ -11,6 +11,7 @@ const walletSchema = new mongoose.Schema({
       level: Number, // at which level this commission was earned
       fromUser: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // who caused this earning
       date: { type: Date, default: Date.now },
+      status: { type: String, enum: ["pending", "completed", "failed","withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"] },
     },
   ],
 });

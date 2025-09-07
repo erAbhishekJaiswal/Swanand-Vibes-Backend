@@ -15,7 +15,7 @@ const {
 // Define routes
 router.get('/', getAllUsers)
 router.get('/:id', getUserById)
-router.put('/:id', updateUser)
+router.put('/:id/profile', updateUser)
 router.delete('/:id', deleteUser)
 router.get('/:id/profile', getUserProfile)
 router.get('/address/:id', getUserAddress)

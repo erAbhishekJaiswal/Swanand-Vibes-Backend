@@ -52,7 +52,9 @@ const getUserById = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, {
+    const {address, avatar, mobile} = req.body;
+
+    const user = await User.findByIdAndUpdate(req.params.id, {mobile}, {
       new: true,
       runValidators: true,
     });

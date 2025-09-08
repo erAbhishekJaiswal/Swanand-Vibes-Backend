@@ -1,3 +1,4 @@
+const { get } = require('mongoose');
 const Product = require('../models/Product');
 const cloudinary = require('cloudinary').v2;
 
@@ -34,11 +35,115 @@ const createProduct = async (req, res) => {
   res.status(201).json(createdProduct);
 };
 
+  const getFilters = async (req, res) => {
+  try {
+    // Get all unique categories with counts
+    const categories = await Product.aggregate([
+      { $group: { _id: '$category', count: { $sum: 1 } } },
+      { $project: { id: '$_id', name: '$_id', count: 1, _id: 0 } }
+    ]);
+    
+    if (!categories || categories.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'No categories found',
+      });
+    }
+
+    // Get all unique brands with counts
+    const brands = await Product.aggregate([
+      { $group: { _id: '$brand', count: { $sum: 1 } } },
+      { $project: { name: '$_id', count: 1, _id: 0 } },
+      { $sort: { name: 1 } }
+    ]);
+
+    if (!brands || brands.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'No brands found',
+      });
+    }
+
+    // Get price range (min and max price)
+    const priceRange = await Product.aggregate([
+      {
+        $group: {
+          _id: null,
+          minPrice: { $min: '$price' },
+          maxPrice: { $max: '$price' }
+        }
+      }
+    ]);
+
+    if (!priceRange || priceRange.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'No price range found',
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        categories,
+        brands,
+        priceRange: priceRange.length > 0 ? 
+          [priceRange[0].minPrice, priceRange[0].maxPrice] : 
+          [0, 1000]
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching filters:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching filters'
+    });
+  }
+}
 const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find();
+    // Extract query parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || '';
+    // const category = req.query.category || '';
+
+    const skip = (page - 1) * limit;
+
+    // Build dynamic query object
+    // const query = {};
+
+    // if (search) {
+    //   query.name = { $regex: search, $options: 'i' }; // Case-insensitive search
+    // }
+
+    // if (category) {
+    //   query.category = category;
+    // }
+
+    const query = {};
+
+if (search && search.trim() !== '') {
+  query.name = { $regex: search, $options: 'i' };
+}
+
+// if (category && category.trim() !== '') {
+//   query.category = category;
+// }
+
+
+    // Fetch filtered and paginated products
+    const products = await Product.find(query).skip(skip).limit(limit);
+
+    // Get total count of filtered products
+    const total = await Product.countDocuments(query);
+
     res.status(200).json({
       success: true,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
       data: products,
     });
   } catch (error) {
@@ -49,38 +154,203 @@ const getAllProducts = async (req, res) => {
   }
 };
 
-//common get all products
 const getCommonProducts = async (req, res) => {
-  try {
-    const products = await Product.find();
-    if (!products) {
-      return res.status(404).json({
-        success: false,
-        error: 'No products found',
-      });
-    }
-    const productlist = products.map((product) => ({
-      id: product._id,
-      name: product.name,
-      brand: product.brand,
-      category: product.category,
-      price: product.price,
-      description: product.description,
-      images: product.images[0].url,
-      rating: product.ratings
-    }));
-    res.status(200).json({
-      success: true,
-      data: productlist
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      error: error.message,
-    });
+  const { page = 1, limit = 10, search = '', category = '', minPrice, maxPrice, brands, minRating, sort } = req.query;
+  const skip = (page - 1) * limit;
+
+  const queryObj = {};
+  if (search) queryObj.name = { $regex: search, $options: 'i' };
+  if (category) queryObj.category = category;
+  if (minPrice) queryObj.price = { ...queryObj.price, $gte: Number(minPrice) };
+  if (maxPrice) queryObj.price = { ...queryObj.price, $lte: Number(maxPrice) };
+  if (minRating) queryObj.ratings = { $gte: Number(minRating) };
+  if (brands) {
+    queryObj.brand = { $in: brands.split(',') };
   }
+
+  let mongooseQuery = Product.find(queryObj).skip(skip).limit(Number(limit));
+
+  if (sort) {
+    // Example: sort="price" or sort="price,-ratings"
+    const sortBy = sort.split(',').join(' ');
+    mongooseQuery = mongooseQuery.sort(sortBy);
+  }
+
+  const [products, total] = await Promise.all([
+    mongooseQuery.exec(),
+    Product.countDocuments(queryObj)
+  ]);
+
+  if (!products.length) {
+    return res.status(404).json({ success: false, error: 'No products found' });
+  }
+
+  const productlist = products.map(product => ({
+    id: product._id,
+    name: product.name,
+    brand: product.brand,
+    category: product.category,
+    price: product.price,
+    description: product.description,
+    images: product.images?.[0]?.url || '',
+    rating: product.ratings
+  }));
+
+  res.status(200).json({
+    success: true,
+    page: Number(page),
+    limit: Number(limit),
+    totalPages: Math.ceil(total / limit),
+    totalItems: total,
+    data: productlist
+  });
 };
-// common get product by id 
+
+
+// const getCommonProducts = async (req, res) => {
+//   try {
+//     // Extract query parameters
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 10;
+//     const search = req.query.search?.trim() || '';
+//     const category = req.query.category?.trim() || '';
+
+//     const skip = (page - 1) * limit;
+
+//     // Build dynamic query
+//     const query = {};
+//     if (search) {
+//       query.name = { $regex: search, $options: 'i' }; // Case-insensitive search
+//     }
+//     if (category) {
+//       query.category = category;
+//     }
+
+//     // Fetch filtered and paginated products
+//     const products = await Product.find(query).skip(skip).limit(limit);
+//     const total = await Product.countDocuments(query);
+
+//     if (!products || products.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         error: 'No products found',
+//       });
+//     }
+
+//     // Format product data
+//     const productlist = products.map((product) => ({
+//       id: product._id,
+//       name: product.name,
+//       brand: product.brand,
+//       category: product.category,
+//       price: product.price,
+//       description: product.description,
+//       images: product.images?.[0]?.url || '',
+//       rating: product.ratings,
+//     }));
+
+//     res.status(200).json({
+//       success: true,
+//       page,
+//       limit,
+//       totalPages: Math.ceil(total / limit),
+//       totalItems: total,
+//       data: productlist,
+//     });
+//   } catch (error) {
+//     res.status(400).json({
+//       success: false,
+//       error: error.message,
+//     });
+//   }
+// };
+
+// In your products route file (e.g., routes/products.js)
+
+
+
+// get all products for admin
+// const getAllProducts = async (req, res) => {
+//   try {
+//     const products = await Product.find();
+//     //add pagination method
+//     let count = products.length;
+
+//     res.status(200).json({
+//       success: true,
+//       data: products,
+//     });
+//   } catch (error) {
+//     res.status(400).json({
+//       success: false,
+//       error: error.message,
+//     });
+//   }
+// };
+
+// const getAllProducts = async (req, res) => {
+//   try {
+//     // Extract page and limit from query parameters, with defaults
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 10;
+
+//     // Calculate the number of documents to skip
+//     const skip = (page - 1) * limit;
+
+//     // Fetch paginated products
+//     const products = await Product.find().skip(skip).limit(limit);
+
+//     // Get total count of products
+//     const total = await Product.countDocuments();
+
+//     res.status(200).json({
+//       success: true,
+//       page,
+//       limit,
+//       totalPages: Math.ceil(total / limit),
+//       totalItems: total,
+//       data: products,
+//     });
+//   } catch (error) {
+//     res.status(400).json({
+//       success: false,
+//       error: error.message,
+//     });
+//   }
+// };
+
+//common get all products for all
+// const getCommonProducts = async (req, res) => {
+//   try {
+//     const products = await Product.find();
+//     if (!products) {
+//       return res.status(404).json({
+//         success: false,
+//         error: 'No products found',
+//       });
+//     }
+//     const productlist = products.map((product) => ({
+//       id: product._id,
+//       name: product.name,
+//       brand: product.brand,
+//       category: product.category,
+//       price: product.price,
+//       description: product.description,
+//       images: product.images[0].url,
+//       rating: product.ratings
+//     }));
+//     res.status(200).json({
+//       success: true,
+//       data: productlist
+//     });
+//   } catch (error) {
+//     res.status(400).json({
+//       success: false,
+//       error: error.message,
+//     });
+//   }
+// };
+// common get product by id for all
 const getCommonProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -112,7 +382,7 @@ const getCommonProductById = async (req, res) => {
   }
 }
 
-// Get a single product by ID
+// Get a single product by ID for Admin
 const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -189,6 +459,48 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+// search products and catogories wise products filter with pagination
+
+const searchProducts = async (req, res) => {
+  try {
+    const products = await Product.find({
+      $or: [
+        { name: { $regex: req.params.query, $options: 'i' } },
+        { category: { $regex: req.params.query, $options: 'i' } },
+        { brand: { $regex: req.params.query, $options: 'i' } },
+      ],
+    });
+
+    if (!products) {
+      return res.status(404).json({
+        success: false,
+        error: 'No products found',
+      });
+    }
+
+    const productlist = products.map((product) => ({
+      id: product._id,
+      name: product.name,
+      brand: product.brand,
+      category: product.category,
+      price: product.price,
+      description: product.description,
+      images: product.images[0].url
+    }))
+
+
+    res.status(200).json({
+      success: true,
+      data: products,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
 module.exports ={
     createProduct,
     getAllProducts,
@@ -197,5 +509,7 @@ module.exports ={
     deleteProduct,
     generateUploadSignature,
     getCommonProducts,
-    getCommonProductById
+    getCommonProductById,
+    getFilters,
+    // searchProducts
 }

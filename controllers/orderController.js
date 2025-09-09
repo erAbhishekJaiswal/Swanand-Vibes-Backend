@@ -30,7 +30,7 @@ const createOrder = async (req, res) => {
     });
     // remove items from cart
     const cart = await Cart.findOne({ user: userId });
-    console.log(cart);
+    // console.log(cart);
     if (cart) {
           // Remove item from cart
       cart.items = cart.items.filter(item => !cartItems.some(orderItem => orderItem.product === item.product));

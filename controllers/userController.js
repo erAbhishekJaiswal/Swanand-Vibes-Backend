@@ -79,8 +79,26 @@ const deleteUser = async (req, res) => {
   }
 };
 
+// update user address
+const updateUserAddress = async (req, res) => {
+  try {
+    const { address } = req.body;
+    const user = await User.findByIdAndUpdate(req.params.id, { address }, {
+      new: true,
+      runValidators: true,
+    });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 
 module.exports = {
+  updateUserAddress,
   getUserProfile,
   getAllUsers,
   getUserById,

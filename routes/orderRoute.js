@@ -8,7 +8,9 @@ const {
     updateOrder,
     getUserOrders,
     // updateOrderStatus,
-    deleteOrder
+    deleteOrder,
+    // cancelOrder
+    cancelOrder
 } = require("../controllers/orderController");
 
 router.post("/:userId", createOrder);
@@ -17,5 +19,7 @@ router.get("/", getAllOrders);
 router.get("/user/:userId", getUserOrders);
 router.put("/:id", updateOrder);
 router.delete("/:id", deleteOrder);
+// cancelOrder
+router.put("/cancel/:id", cancelOrder);
 
 module.exports = router;

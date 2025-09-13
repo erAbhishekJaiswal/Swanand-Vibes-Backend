@@ -1,55 +1,56 @@
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
+const Product = require('../models/Product');
 
-const createOrder = async (req, res) => {
-  try {
-    const userId = req.params.userId;
-    // console.log("Creating order for user:", userId);
+// const createOrder = async (req, res) => {
+//   try {
+//     const userId = req.params.userId;
+//     // console.log("Creating order for user:", userId);
 
-    const { cartItems, itemsPrice, shippingPrice, taxPrice, totalPrice, address, apartment, city, country, email, mobile, shippingMethod, state, zipCode,paymentStatus,paidAt } = req.body;
+//     const { cartItems, itemsPrice, shippingPrice, taxPrice, totalPrice, address, apartment, city, country, email, mobile, shippingMethod, state, zipCode,paymentStatus,paidAt } = req.body;
    
-    const order = await Order.create({
-      user: userId,
-      orderItems: cartItems,
-      itemsPrice,
-      shippingPrice,
-      taxPrice,
-      totalPrice: itemsPrice + shippingPrice + taxPrice,
-      shippingAddress: {
-        address,
-        apartment,
-        city,
-        country,
-        state,
-        postalCode: zipCode
-      },
-      shippingMethod: shippingMethod,
-      isPaid: true,
-      paymentStatus: paymentStatus,
-      paidAt: paidAt,
-    });
-    // remove items from cart
-    const cart = await Cart.findOne({ user: userId });
-    // console.log(cart);
-    if (cart) {
-          // Remove item from cart
-      cart.items = cart.items.filter(item => !cartItems.some(orderItem => orderItem.product === item.product));
-      await cart.save();
-    }
-    cart.items.pull(cartItems.map(item => item._id));
-    await cart.save();
+//     const order = await Order.create({
+//       user: userId,
+//       orderItems: cartItems,
+//       itemsPrice,
+//       shippingPrice,
+//       taxPrice,
+//       totalPrice: itemsPrice + shippingPrice + taxPrice,
+//       shippingAddress: {
+//         address,
+//         apartment,
+//         city,
+//         country,
+//         state,
+//         postalCode: zipCode
+//       },
+//       shippingMethod: shippingMethod,
+//       isPaid: true,
+//       paymentStatus: paymentStatus,
+//       paidAt: paidAt,
+//     });
+//     // remove items from cart
+//     const cart = await Cart.findOne({ user: userId });
+//     // console.log(cart);
+//     if (cart) {
+//           // Remove item from cart
+//       cart.items = cart.items.filter(item => !cartItems.some(orderItem => orderItem.product === item.product));
+//       await cart.save();
+//     }
+//     cart.items.pull(cartItems.map(item => item._id));
+//     await cart.save();
 
-    res.status(201).json({
-      success: true,
-      data: order,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      error: error.message,
-    });
-  }
-};
+//     res.status(201).json({
+//       success: true,
+//       data: order,
+//     });
+//   } catch (error) {
+//     res.status(400).json({
+//       success: false,
+//       error: error.message,
+//     });
+//   }
+// };
 
 
 // const getAllOrders = async (req, res) => {
@@ -70,6 +71,110 @@ const createOrder = async (req, res) => {
 // controllers/orderController.js
 
 // controllers/orderController.js
+
+const { distributeCommission } = require("../utils/commissionService");
+
+const createOrder = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    const {
+      cartItems,
+      itemsPrice,
+      shippingPrice,
+      taxPrice,
+      totalPrice,
+      address,
+      apartment,
+      city,
+      country,
+      email,
+      mobile,
+      shippingMethod,
+      state,
+      zipCode,
+      paymentStatus,
+      paidAt,
+    } = req.body;
+
+    // after add 
+      // ✅ Step 1: Validate stock for each product
+    for (const item of cartItems) {
+      const product = await Product.findById(item.product);
+
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          error: `Product not found: ${item.product}`,
+        });
+      }
+
+      if (product.countInStock < item.qty) {
+        return res.status(400).json({
+          success: false,
+          error: `Not enough stock for ${product.name}. Available: ${product.countInStock}, Requested: ${item.qty}`,
+        });
+      }
+    }
+
+    // ✅ Step 2: Reduce stock
+    for (const item of cartItems) {
+      const product = await Product.findById(item.product);
+      product.countInStock -= item.qty;
+      await product.save();
+    }
+
+
+    // ✅ Create order
+    const order = await Order.create({
+      user: userId,
+      orderItems: cartItems,
+      itemsPrice,
+      shippingPrice,
+      taxPrice,
+      totalPrice: itemsPrice + shippingPrice + taxPrice, // safer calc
+      shippingAddress: {
+        address,
+        apartment,
+        city,
+        country,
+        state,
+        postalCode: zipCode,
+      },
+      shippingMethod,
+      isPaid: true,
+      paymentstaus:paymentStatus,
+      paidAt,
+      commissionsDistributed: false, // NEW FIELD in schema
+    });
+
+    // ✅ Remove purchased items from cart
+    const cart = await Cart.findOne({ user: userId });
+    if (cart) {
+      cart.items = cart.items.filter(
+        (item) => !cartItems.some((orderItem) => orderItem.product.toString() === item.product.toString())
+      );
+      await cart.save();
+    }
+
+    // ✅ Distribute commissions immediately after order is created & paid
+    if (order.isPaid && !order.commissionsDistributed) {
+      await distributeCommission(order._id);
+    }
+
+    res.status(201).json({
+      success: true,
+      data: order,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+
 const getAllOrders = async (req, res) => {
   try {
     let { page = 1, limit = 10, search = "", startDate, endDate } = req.query;
@@ -204,7 +309,7 @@ const getAllOrders = async (req, res) => {
 const getUserOrders = async (req, res) => {
     try {
         const userId = req.params.userId;
-        console.log(`Fetching orders for user ${userId}`);
+        // console.log(`Fetching orders for user ${userId}`);
 
         const orders = await Order.find({ user: userId });
         res.status(200).json({

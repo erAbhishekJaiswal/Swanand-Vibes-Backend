@@ -1,7 +1,7 @@
 const { get } = require('mongoose');
 const Product = require('../models/Product');
 const cloudinary = require('cloudinary').v2;
-
+const ExcelJS = require("exceljs");
 // const createProduct = async (req, res) => {
 //   try {
 //     const product = await Product.create(req.body);
@@ -18,21 +18,149 @@ const cloudinary = require('cloudinary').v2;
 // };
 
 
-const createProduct = async (req, res) => {
-  const { name, price, description, images, brand, category, countInStock, user } = req.body;
-  const product = new Product({
-    name,
-    price,
-    createdBy:user,
-    images,
-    brand,
-    category,
-    stock: countInStock,
-    description
-  });
+// const createProduct = async (req, res) => {
+//   const { name, price, description, images, brand, category, countInStock, user } = req.body;
+//   const product = new Product({
+//     name,
+//     price,
+//     createdBy:user,
+//     images,
+//     brand,
+//     category,
+//     stock: countInStock,
+//     description
+//   });
 
-  const createdProduct = await product.save();
-  res.status(201).json(createdProduct);
+//   const createdProduct = await product.save();
+//   res.status(201).json(createdProduct);
+// };
+
+
+const createProduct = async (req, res) => {
+  try {
+    const { 
+      name, 
+      price, 
+      discountPrice, 
+      description, 
+      images, 
+      brand, 
+      category, 
+      stock, 
+      user,
+      variants 
+    } = req.body;
+
+    // Validate required fields
+    if (!name || !price || !description || !brand || !category) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide all required fields: name, price, description, brand, category'
+      });
+    }
+
+    // Validate variants if provided
+    if (variants && Array.isArray(variants)) {
+      for (let i = 0; i < variants.length; i++) {
+        const variant = variants[i];
+        if (!variant.size || !variant.price) {
+          return res.status(400).json({
+            success: false,
+            message: `Variant ${i + 1} is missing required fields: size and price`
+          });
+        }
+        
+        // Validate variant images structure if provided
+        if (variant.images && Array.isArray(variant.images)) {
+          for (let j = 0; j < variant.images.length; j++) {
+            const image = variant.images[j];
+            if (!image.public_id || !image.url) {
+              return res.status(400).json({
+                success: false,
+                message: `Variant ${i + 1} image ${j + 1} is missing required fields: public_id or url`
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Validate main images structure if provided
+    if (images && Array.isArray(images)) {
+      for (let i = 0; i < images.length; i++) {
+        const image = images[i];
+        if (!image.public_id || !image.url) {
+          return res.status(400).json({
+            success: false,
+            message: `Main image ${i + 1} is missing required fields: public_id or url`
+          });
+        }
+      }
+    }
+
+    // Calculate overall stock if variants are provided
+    let overallStock = stock || 0;
+    if (variants && variants.length > 0) {
+      // overallStock = variants.reduce((total, variant) => {{total} + variant.stock, 0});
+      const overallStock = variants.reduce((total, variant) => total + variant.stock, 0);
+    }
+
+    // Create product object
+    const productData = {
+      name,
+      price,
+      description,
+      brand,
+      category,
+      stock: overallStock,
+      createdBy: user,
+      images: images || [],
+      variants: variants || []
+    };
+
+    // Add discountPrice if provided
+    if (discountPrice !== undefined) {
+      productData.discountPrice = discountPrice;
+    }
+
+    const product = new Product(productData);
+    const createdProduct = await product.save();
+    
+    // Populate category and createdBy references
+    await createdProduct.populate('category', 'name');
+    await createdProduct.populate('createdBy', 'name email');
+
+    res.status(201).json({
+      success: true,
+      message: 'Product created successfully',
+      product: createdProduct
+    });
+  } catch (error) {
+    console.error('Error creating product:', error);
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors
+      });
+    }
+    
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Product with this name already exists'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Server error while creating product'
+    });
+  }
 };
 
   const getFilters = async (req, res) => {
@@ -204,6 +332,105 @@ const getCommonProducts = async (req, res) => {
     totalItems: total,
     data: productlist
   });
+};
+
+const exportStockReport = async (req, res) => {
+  try {
+    const products = await Product.find()
+      .populate("category", "name") // fetch category name
+      .lean();
+
+    if (!products) {
+      return res.status(404).json({
+        success: false,
+        error: "No products found",
+      });
+    }
+
+//     products.forEach((product) => {
+//   // If category is still a string, fallback
+//   if (typeof product.category === "string") {
+//     product.category = { name: product.category };
+//   }
+// });
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Stock Report");
+
+    // Define columns
+    worksheet.columns = [
+      { header: "Product ID", key: "id", width: 25 },
+      { header: "Product Name", key: "name", width: 30 },
+      { header: "Category", key: "category", width: 20 },
+      { header: "Brand", key: "brand", width: 20 },
+      { header: "Base Price", key: "price", width: 15 },
+      { header: "Discount Price", key: "discountPrice", width: 15 },
+      { header: "Base Stock", key: "stock", width: 15 },
+      { header: "Variant Size", key: "variantSize", width: 15 },
+      { header: "Variant Price", key: "variantPrice", width: 15 },
+      { header: "Variant Stock", key: "variantStock", width: 15 },
+    ];
+
+    // Add rows
+    products.forEach((product) => {
+      if (product.variants && product.variants.length > 0) {
+        product.variants.forEach((variant) => {
+          worksheet.addRow({
+            id: product._id.toString(),
+            name: product.name,
+            category: product.category?.name || "N/A",
+            brand: product.brand,
+            price: product.price,
+            discountPrice: product.discountPrice || "-",
+            stock: product.stock,
+            variantSize: variant.size,
+            variantPrice: variant.price,
+            variantStock: variant.stock,
+          });
+        });
+      } else {
+        worksheet.addRow({
+          id: product._id.toString(),
+          name: product.name,
+          category: product.category?.name || "N/A",
+          brand: product.brand,
+          price: product.price,
+          discountPrice: product.discountPrice || "-",
+          stock: product.stock,
+          variantSize: "-",
+          variantPrice: "-",
+          variantStock: "-",
+        });
+      }
+    });
+
+    // Set header styles
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "4472C4" }, // Blue header
+      };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+    });
+
+    // Send Excel file to client
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=stock_report.xlsx"
+    );
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    await workbook.xlsx.write(res);
+    // res.end();
+  } catch (error) {
+    console.error("Error exporting stock report:", error);
+    res.status(500).json({ message: "Error generating stock report" });
+  }
 };
 
 
@@ -511,5 +738,6 @@ module.exports ={
     getCommonProducts,
     getCommonProductById,
     getFilters,
+    exportStockReport
     // searchProducts
 }

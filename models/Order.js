@@ -55,6 +55,7 @@ const orderSchema = new mongoose.Schema(
     paidAt: Date,
     deliveryStatus: { type: String, enum: ["pending", "shipped", "delivered"], default: "pending" },
     isDelivered: { type: Boolean, default: false },
+    commissionsDistributed: { type: Boolean, default: false },
     deliveredAt: Date,
   },
   { timestamps: true }

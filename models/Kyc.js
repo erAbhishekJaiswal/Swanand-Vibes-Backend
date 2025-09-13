@@ -7,6 +7,11 @@ const kycSchema = new mongoose.Schema({
     unique: true,
     required: true
   },
+  passportPhoto: {
+    type: String,
+    maxlength: 255,
+    required: true
+  },
   adharNumber: {
     type: String,
     maxlength: 20,

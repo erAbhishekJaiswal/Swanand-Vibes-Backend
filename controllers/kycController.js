@@ -7,6 +7,57 @@ const User = require('../models/User'); // Required for populated responses
 // @desc   Submit new KYC
 // @route  POST /api/user/kyc/
 // @access User
+// exports.submitKyc = async (req, res) => {
+//   try {
+//     const { userId, kycData } = req.body;
+
+//     if (!userId || !kycData) {
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+
+//     const {
+//       adharNumber,
+//       adharName,
+//       panNumber,
+//       bankName,
+//       bankAccount,
+//       ifscCode,
+//       files,
+//     } = kycData;
+
+//     // Validate all required images are present
+//     if (!files?.aadhaar?.[0]?.url || !files?.pan?.[0]?.url || !files?.bank?.[0]?.url) {
+//       return res.status(400).json({ message: "All required documents must be uploaded" });
+//     }
+
+//     // Check if KYC already exists for user
+//     const existingKyc = await Kyc.findOne({ userId });
+//     if (existingKyc) {
+//       return res.status(409).json({ message: "KYC already submitted for this user." });
+//     }
+
+//     const newKyc = new Kyc({
+//       userId,
+//       adharNumber,
+//       adharName,
+//       adharImage: files.aadhaar[0].url,
+//       panNumber,
+//       panImage: files.pan[0].url,
+//       bankName,
+//       bankAccount,
+//       ifscCode,
+//       bankDocImage: files.bank[0].url,
+//     });
+
+//     await newKyc.save();
+
+//     return res.status(200).json({ message: "KYC submitted successfully", data: newKyc });
+//   } catch (error) {
+//     console.error("Error submitting KYC:", error);
+//     return res.status(500).json({ message: "Server error while submitting KYC" });
+//   }
+// };  
+
 exports.submitKyc = async (req, res) => {
   try {
     const { userId, kycData } = req.body;
@@ -25,7 +76,7 @@ exports.submitKyc = async (req, res) => {
       files,
     } = kycData;
 
-    // Validate all required images are present
+    // Validate all required documents are present
     if (!files?.aadhaar?.[0]?.url || !files?.pan?.[0]?.url || !files?.bank?.[0]?.url) {
       return res.status(400).json({ message: "All required documents must be uploaded" });
     }
@@ -47,17 +98,20 @@ exports.submitKyc = async (req, res) => {
       bankAccount,
       ifscCode,
       bankDocImage: files.bank[0].url,
+      passportPhoto: files.passportPhoto?.[0]?.url || null // Optional passport photo
     });
 
     await newKyc.save();
 
-    return res.status(200).json({ message: "KYC submitted successfully", data: newKyc });
+    return res.status(200).json({ 
+      message: "KYC submitted successfully", 
+      data: newKyc 
+    });
   } catch (error) {
     console.error("Error submitting KYC:", error);
     return res.status(500).json({ message: "Server error while submitting KYC" });
   }
-};  
-
+};
 
 // GET: Fetch all KYC records
 exports.getAllKycs = async (req, res) => {

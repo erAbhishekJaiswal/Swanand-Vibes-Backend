@@ -41,6 +41,7 @@ const userSchema = new mongoose.Schema(
     mobile: { type: String },
     referralCode: { type: String, unique: true },
     referredBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // parent sponsor
+    sponsorPath: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // full chain
     wallet: { type: mongoose.Schema.Types.ObjectId, ref: "Wallet" }, // linked wallet
   },
   { timestamps: true }

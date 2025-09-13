@@ -10,6 +10,7 @@ const {
 } = require("../controllers/productController");
 
 router.post("/", createProduct);
+router.get("/stock", require("../controllers/productController").exportStockReport);
 router.get('/filters', require("../controllers/productController").getFilters);
 
 router.get("/signature", require("../controllers/productController").generateUploadSignature);

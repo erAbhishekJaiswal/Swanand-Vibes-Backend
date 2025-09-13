@@ -10,7 +10,7 @@ const {
     updateUser,
     deleteUser,
     getUserAddress,
-    updateUserAddress
+    updateUserAddress,getUpline, getDownline
 } = require('../controllers/userController')
 
 // Define routes
@@ -21,5 +21,8 @@ router.put('/:id/address', updateUserAddress)
 router.delete('/:id', deleteUser)
 router.get('/:id/profile', getUserProfile)
 router.get('/address/:id', getUserAddress)
+router.get("/upline/:userId", getUpline);
+router.get("/downline/:userId", getDownline);
+
 
 module.exports = router

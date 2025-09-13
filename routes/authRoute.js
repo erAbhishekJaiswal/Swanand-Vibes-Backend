@@ -8,7 +8,11 @@ const {
   login,
   refreshToken,
   logout,
-  registerUser
+  registerUser,
+  requestOtp,
+  otpVerify,
+  resetPassword,
+  resetProfilePassword
 } = require("../controllers/authController");
 const { sendEmail } = require("../config/emailService");
 const { protect, restrictTo } = require("../middleware/authMiddlware");
@@ -19,6 +23,14 @@ router.post("/register", registerUser);
 router.post("/login", login);
 router.post("/refresh", refreshToken);
 router.post("/logout", logout);
+router.post("/password/request-otp", requestOtp);
+router.post("/password/verify-otp", otpVerify);
+router.post("/password/reset-password", resetPassword);
+router.post('/reset-profile-password',resetProfilePassword)
+
+
+
+
 
 // router.post("/email-verify", async (req, res) => {
 //   try {
@@ -179,7 +191,42 @@ router.post("/request-otp", async (req, res) => {
   // Prepare email
   const sendSmtpEmail = new brevo.SendSmtpEmail();
   sendSmtpEmail.subject = "Your OTP Code";
-  sendSmtpEmail.htmlContent = `... your HTML email content with ${otp} ...`;
+  // sendSmtpEmail.htmlContent = `... your HTML email content with ${otp} ...`;
+    sendSmtpEmail.htmlContent = `
+  <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7fb; padding: 40px; text-align: center;">
+    <div style="max-width: 500px; margin: auto; background: #ffffff; border-radius: 12px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+      
+      <!-- Logo / Header -->
+      <div style="margin-bottom: 20px;">
+        <h2 style="color: #4a90e2; margin: 0;">Swanand Vibes</h2>
+      </div>
+      
+      <!-- Title -->
+      <h3 style="color: #333; margin-bottom: 10px;">Your One-Time Password (OTP)</h3>
+      
+      <!-- OTP Box -->
+      <div style="font-size: 28px; font-weight: bold; color: #4a90e2; letter-spacing: 4px; margin: 20px 0; padding: 15px; background: #f0f4ff; border-radius: 8px; display: inline-block;">
+        ${otp}
+      </div>
+      
+      <!-- Info -->
+      <p style="color: #555; font-size: 15px; margin-bottom: 25px;">
+        Use the above OTP to complete your registration. <br/>
+        This code will expire in <b>5 minutes</b>.
+      </p>
+      
+      <!-- Button -->
+      <a href="#" style="background: #4a90e2; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; font-weight: 500;">
+        Verify Now
+      </a>
+      
+      <!-- Footer -->
+      <p style="margin-top: 30px; font-size: 13px; color: #999;">
+        If you didn’t request this, you can safely ignore this email.
+      </p>
+    </div>
+  </div>
+`;
   sendSmtpEmail.sender = { name: "Swanand Vibes", email: "man.of.iron786@gmail.com" };
   sendSmtpEmail.to = [{ email }];
 

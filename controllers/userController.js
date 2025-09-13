@@ -29,14 +29,172 @@ const getUserAddress = async (req, res) => {
   }
 };
 
+// const getAllUsers = async (req, res) => {
+//   try {
+//     const users = await User.find();
+//     res.json(users);
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+// Get All Users for Admin
+// controllers/userController.js
+// const getAllUsers = async (req, res) => {
+//   try {
+//     let { page = 1, limit = 10, search = "", role } = req.query;
+
+//     page = Number(page);
+//     limit = Number(limit);
+
+//     // Base query
+//     let query = {};
+
+//     // ✅ Role filter
+//     if (role) {
+//       query.role = role;
+//     }
+
+//     // ✅ Search filter (name, email)
+//     if (search) {
+//       query.$or = [
+//         { name: { $regex: search, $options: "i" } },
+//         { email: { $regex: search, $options: "i" } },
+//       ];
+//     }
+
+//     // Fetch users with filters + pagination
+//     const users = await User.find(query)
+//       .sort({ createdAt: -1 }) // newest first
+//       .skip((page - 1) * limit)
+//       .limit(limit);
+
+//     // Count for pagination
+//     const totalUsers = await User.countDocuments(query);
+
+//     res.status(200).json({
+//       success: true,
+//       page,
+//       limit,
+//       totalUsers,
+//       totalPages: Math.ceil(totalUsers / limit),
+//       data: users,
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error",
+//       error: error.message,
+//     });
+//   }
+// };
+
+
+// controllers/userController.js
+// const getAllUsers = async (req, res) => {
+//   try {
+//     let { page, limit, search, role } = req.query;
+
+//     // ✅ Ensure defaults when query params are empty
+//     page = page && !isNaN(page) ? Number(page) : 1;
+//     limit = limit && !isNaN(limit) ? Number(limit) : 10;
+
+//     // Base query
+//     let query = {};
+
+//     // ✅ Role filter
+//     if (role && role.trim() !== "") {
+//       query.role = role;
+//     }
+
+//     // ✅ Search filter (name, email)
+//     if (search && search.trim() !== "") {
+//       query.$or = [
+//         { name: { $regex: search, $options: "i" } },
+//         { email: { $regex: search, $options: "i" } },
+//       ];
+//     }
+
+//     // Fetch users with filters + pagination
+//     const users = await User.find(query)
+//       // .sort({ createdAt: -1 }) // newest first
+//       .skip((page - 1) * limit)
+//       .limit(limit);
+
+//     // Count for pagination
+//     const totalUsers = await User.countDocuments(query);
+
+//     res.status(200).json({
+//       success: true,
+//       page,
+//       limit,
+//       totalUsers,
+//       totalPages: Math.ceil(totalUsers / limit),
+//       data: users,
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error",
+//       error: error.message,
+//     });
+//   }
+// };
+
+
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find();
-    res.json(users);
+    let { page, limit, search, role } = req.query;
+
+    // ✅ Ensure defaults
+    page = page && !isNaN(page) ? Number(page) : 1;
+    limit = limit && !isNaN(limit) ? Number(limit) : 10;
+    search = search && search !== "null" ? search : "";
+    role = role && role !== "null" ? role : "";
+
+    // ✅ Build query safely
+    let query = {};
+
+    if (role !== "") {
+      query.role = new RegExp(`^${role}$`, "i"); // case-insensitive match
+    }
+
+    if (search !== "") {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // console.log("Final Query:", query); // 🔍 debug
+
+    // Fetch users
+    const users = await User.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    const totalUsers = await User.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      page,
+      limit,
+      totalUsers,
+      totalPages: Math.ceil(totalUsers / limit),
+      data: users,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
   }
 };
+
+
+
 
 const getUserById = async (req, res) => {
   try {
@@ -97,6 +255,32 @@ const updateUserAddress = async (req, res) => {
 };
 
 
+// Get upline (sponsor chain)
+const getUpline = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await User.findById(userId).populate("sponsorPath", "name email role");
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json({ upline: user.sponsorPath });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get downline (all users under this user)
+const getDownline = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const downline = await User.find({ sponsorPath: userId }).select("name email role referredBy");
+
+    res.json({ downline });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   updateUserAddress,
   getUserProfile,
@@ -104,7 +288,9 @@ module.exports = {
   getUserById,
   updateUser,
   deleteUser,
-  getUserAddress
+  getUserAddress,
+  getUpline,
+  getDownline
 };
 
 

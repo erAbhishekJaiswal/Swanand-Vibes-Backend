@@ -1,4 +1,11 @@
 const User = require("../models/User");
+const Wallet = require("../models/Wallet");
+const Order = require("../models/Order");
+const Kyc = require("../models/Kyc");
+const Cart = require("../models/Cart");
+const Product = require("../models/Product");
+const Contact = require("../models/Contact");
+const Gift = require("../models/Gift");
 // import User from "../models/User.js";
 
 
@@ -281,6 +288,186 @@ const getDownline = async (req, res) => {
   }
 };
 
+
+// Admin Dashboard API
+// const adminDashboard = async (req, res) => {
+//   try {
+//     const id = req.params.id;
+//     const user = await User.findById(id);
+
+//     if (!user || user.role !== "admin") {
+//       return res.status(403).json({ message: "Access denied" });
+//     }
+//     // user count, product count, withdrawal count, deposit count, order count, order pending count, order completed count, contact count, and kyc pending count
+//     const userCount = await User.countDocuments();
+//     const productCount = await Product.countDocuments();
+//     const withdrawalCount = await Wallet.countDocuments();
+//     const depositCount = await Wallet.countDocuments();
+//     const orderCount = await Order.countDocuments();
+//     // const orderPendingCount = await Order.countDocuments({ status: "pending" });
+//     // const orderCompletedCount = await Order.countDocuments({ status: "completed" });
+//     const contactCount = await Contact.countDocuments();
+//     const kycPendingCount = await Kyc.countDocuments();
+
+//     // if (!userCount || !productCount || !withdrawalCount || !depositCount || !orderCount || !orderPendingCount || !orderCompletedCount || !contactCount || !kycPendingCount) {
+//     //   return res.status(404).json({ message: "Data not found" });
+//     // }
+
+//     res.json({
+//       userCount,
+//       productCount,
+//       withdrawalCount,
+//       depositCount,
+//       orderCount,
+//       // orderPendingCount,
+//       // orderCompletedCount,
+//       contactCount,
+//       kycPendingCount,
+//     });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// };
+
+const adminDashboard = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const user = await User.findById(id);
+
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    // ✅ Get all counts
+    const userCount = await User.countDocuments();
+    const productCount = await Product.countDocuments();
+    const orderCount = await Order.countDocuments();
+    const orderPendingCount = await Order.countDocuments({ deliveryStatus: "pending" });
+    const orderCompletedCount = await Order.countDocuments({ deliveryStatus: "delivered" });
+    const contactCount = await Contact.countDocuments();
+    const kycPendingCount = await Kyc.countDocuments({ status: "pending" }); // assuming `status` field exists in Kyc schema
+
+    // ✅ Withdrawal & Deposit counts from transactions array
+    const withdrawalCount = await Wallet.aggregate([
+      { $unwind: "$transactions" },
+      { $match: { "transactions.status": { $in: ["withdrawal-requested", "withdrawal-approved"] } } },
+      { $count: "count" }
+    ]);
+
+    const depositCount = await Wallet.aggregate([
+      { $unwind: "$transactions" },
+      { $match: { "transactions.type": "credit", "transactions.status": "completed" } },
+      { $count: "count" }
+    ]);
+
+    res.json({
+      userCount,
+      productCount,
+      withdrawalCount: withdrawalCount.length > 0 ? withdrawalCount[0].count : 0,
+      depositCount: depositCount.length > 0 ? depositCount[0].count : 0,
+      orderCount,
+      orderPendingCount,
+      orderCompletedCount,
+      contactCount,
+      kycPendingCount,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const userDashboard = async (req, res) => {
+  try {
+    const id = req.params.id; // userId from URL or token
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // ✅ Wallet Info
+    const wallet = await Wallet.findOne({ user: id });
+
+    let walletBalance = wallet ? wallet.balance : 0;
+
+    // Deposit stats
+    const depositStats = await Wallet.aggregate([
+      { $match: { user: user._id } },
+      { $unwind: "$transactions" },
+      { $match: { "transactions.type": "credit", "transactions.status": "completed" } },
+      {
+        $group: {
+          _id: null,
+          totalDeposits: { $sum: "$transactions.amount" },
+          depositCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Withdrawal stats
+    const withdrawalStats = await Wallet.aggregate([
+      { $match: { user: user._id } },
+      { $unwind: "$transactions" },
+      { $match: { "transactions.status": { $in: ["withdrawal-requested", "withdrawal-approved"] } } },
+      {
+        $group: {
+          _id: null,
+          totalWithdrawals: { $sum: "$transactions.amount" },
+          withdrawalCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const kycstatus = await Kyc.findOne({ userId: id });
+    const kycStatus = kycstatus ? kycstatus.status : "pending";
+
+    // ✅ Order stats
+    const orderCount = await Order.countDocuments({ user: id });
+    // ✅ Total order amount (sum of totalPrice across all orders)
+    const totalOrderData = await Order.aggregate([
+      { $match: { user: user._id } },
+      {
+        $group: {
+          _id: null,
+          totalOrderAmount: { $sum: "$totalPrice" }
+        }
+      }
+    ]);
+    const orderPendingCount = await Order.countDocuments({ user: id, deliveryStatus: "pending" });
+    const orderCompletedCount = await Order.countDocuments({ user: id, deliveryStatus: "delivered" });
+    // cart items count
+    const cartCount = await Cart.countDocuments({ user: id });
+    // gifts list with valid date
+    const gifts = await Gift.find({ status: "active", validity: { $gte: new Date() } });
+    const orderAmount = totalOrderData.length > 0 ? totalOrderData[0].totalOrderAmount : 0;
+    res.json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+      walletBalance,
+      depositCount: depositStats.length > 0 ? depositStats[0].depositCount : 0,
+      totalDeposits: depositStats.length > 0 ? depositStats[0].totalDeposits : 0,
+      withdrawalCount: withdrawalStats.length > 0 ? withdrawalStats[0].withdrawalCount : 0,
+      totalWithdrawals: withdrawalStats.length > 0 ? withdrawalStats[0].totalWithdrawals : 0,
+      orderCount,
+      kycStatus,
+      totalOrderAmount: orderAmount,
+      orderAmount,
+      orderPendingCount,
+      orderCompletedCount,
+      cartCount,
+      gifts
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+
+
 module.exports = {
   updateUserAddress,
   getUserProfile,
@@ -290,7 +477,9 @@ module.exports = {
   deleteUser,
   getUserAddress,
   getUpline,
-  getDownline
+  getDownline,
+  adminDashboard,
+  userDashboard
 };
 
 

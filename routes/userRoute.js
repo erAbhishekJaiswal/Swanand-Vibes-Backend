@@ -10,7 +10,7 @@ const {
     updateUser,
     deleteUser,
     getUserAddress,
-    updateUserAddress,getUpline, getDownline
+    updateUserAddress,getUpline, getDownline,adminDashboard, userDashboard
 } = require('../controllers/userController')
 
 // Define routes
@@ -23,6 +23,8 @@ router.get('/:id/profile', getUserProfile)
 router.get('/address/:id', getUserAddress)
 router.get("/upline/:userId", getUpline);
 router.get("/downline/:userId", getDownline);
+router.get("/dashboard/:id", adminDashboard);
+router.get("/dashboard/user/:id", userDashboard);
 
 
 module.exports = router

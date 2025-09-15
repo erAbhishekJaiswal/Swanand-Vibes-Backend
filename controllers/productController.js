@@ -2,6 +2,7 @@ const { get } = require('mongoose');
 const Product = require('../models/Product');
 const cloudinary = require('cloudinary').v2;
 const ExcelJS = require("exceljs");
+const Cart = require('../models/Cart')
 // const createProduct = async (req, res) => {
 //   try {
 //     const product = await Product.create(req.body);
@@ -667,6 +668,7 @@ const updateProduct = async (req, res) => {
 
 const deleteProduct = async (req, res) => {
   try {
+    const productId = req.params.id;
     const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) {
       return res.status(404).json({
@@ -674,6 +676,10 @@ const deleteProduct = async (req, res) => {
         error: 'Product not found',
       });
     }
+    await Cart.updateMany(
+  { "items.product": productId },
+  { $pull: { items: { product: productId } } }
+);
     res.status(200).json({
       success: true,
       data: {},

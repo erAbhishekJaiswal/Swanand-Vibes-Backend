@@ -81,3 +81,68 @@ exports.getImagesByCategory = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.getAllgallery = async (req, res) => {
+  try {
+    // Destructure query parameters with defaults
+    const {
+      page = 1,
+      limit = 10,
+      category,
+      search,
+      startDate,
+      endDate,
+    } = req.query;
+
+    // Build dynamic filter object
+    const filter = {};
+
+    // Category filter
+    if (category) {
+      filter.category = category;
+    }
+
+    // Search filter (case-insensitive partial match on title)
+    if (search) {
+      filter.title = { $regex: search, $options: 'i' };
+    }
+
+    // Date range filter
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) {
+        filter.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        // Ensure endDate includes the full day
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = end;
+      }
+    }
+
+    // Pagination calculations
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Query database
+    const images = await Gallery.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Optional: total count for frontend pagination
+    const total = await Gallery.countDocuments(filter);
+
+    res.json({
+      data: images,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

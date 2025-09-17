@@ -164,50 +164,144 @@ const createProduct = async (req, res) => {
   }
 };
 
-  const getFilters = async (req, res) => {
-  try {
-    // Get all unique categories with counts
-    const categories = await Product.aggregate([
-      { $group: { _id: '$category', count: { $sum: 1 } } },
-      { $project: { id: '$_id', name: '$_id', count: 1, _id: 0 } }
-    ]);
+//   const getFilters = async (req, res) => {
+//   try {
+//     // Get all unique categories with counts
+//     const categories = await Product.aggregate([
+//       { $group: { _id: '$category', count: { $sum: 1 } } },
+//       { $project: { id: '$_id', name: 'name', count: 1, _id: 0 } }
+//     ]);
     
+//     if (!categories || categories.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         error: 'No categories found',
+//       });
+//     }
+
+//     // Get all unique brands with counts
+//     const brands = await Product.aggregate([
+//       { $group: { _id: '$brand', count: { $sum: 1 } } },
+//       { $project: { name: '$_id', count: 1, _id: 0 } },
+//       { $sort: { name: 1 } }
+//     ]);
+
+//     if (!brands || brands.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         error: 'No brands found',
+//       });
+//     }
+
+//     // Get price range (min and max price)
+//     const priceRange = await Product.aggregate([
+//       {
+//         $group: {
+//           _id: null,
+//           minPrice: { $min: '$price' },
+//           maxPrice: { $max: '$price' }
+//         }
+//       }
+//     ]);
+
+//     if (!priceRange || priceRange.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         error: 'No price range found',
+//       });
+//     }
+
+//     res.json({
+//       success: true,
+//       data: {
+//         categories,
+//         brands,
+//         priceRange: priceRange.length > 0 ? 
+//           [priceRange[0].minPrice, priceRange[0].maxPrice] : 
+//           [0, 1000]
+//       }
+//     });
+//   } catch (error) {
+//     console.error('Error fetching filters:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Error fetching filters'
+//     });
+//   }
+// }
+
+const getFilters = async (req, res) => {
+  try {
+    // ✅ Get categories with counts and names
+    const categories = await Product.aggregate([
+      {
+        $group: {
+          _id: "$category",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $lookup: {
+          from: "categories", // collection name in MongoDB (lowercase + plural usually)
+          localField: "_id",
+          foreignField: "_id",
+          as: "categoryInfo",
+        },
+      },
+      { $unwind: "$categoryInfo" },
+      {
+        $project: {
+          id: "$_id",
+          name: "$categoryInfo.name", // ✅ Actual category name
+          count: 1,
+          _id: 0,
+        },
+      },
+      { $sort: { name: 1 } },
+    ]);
+
     if (!categories || categories.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'No categories found',
+        error: "No categories found",
       });
     }
 
-    // Get all unique brands with counts
+    // ✅ Get brands with counts
     const brands = await Product.aggregate([
-      { $group: { _id: '$brand', count: { $sum: 1 } } },
-      { $project: { name: '$_id', count: 1, _id: 0 } },
-      { $sort: { name: 1 } }
+      { $group: { _id: "$brand", count: { $sum: 1 } } },
+      {
+        $project: {
+          name: "$_id",
+          count: 1,
+          _id: 0,
+        },
+      },
+      { $sort: { name: 1 } },
     ]);
 
     if (!brands || brands.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'No brands found',
+        error: "No brands found",
       });
     }
 
-    // Get price range (min and max price)
+    // ✅ Get min and max price
     const priceRange = await Product.aggregate([
       {
         $group: {
           _id: null,
-          minPrice: { $min: '$price' },
-          maxPrice: { $max: '$price' }
-        }
-      }
+          minPrice: { $min: "$price" },
+          maxPrice: { $max: "$price" },
+        },
+      },
     ]);
 
     if (!priceRange || priceRange.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'No price range found',
+        error: "No price range found",
       });
     }
 
@@ -216,19 +310,21 @@ const createProduct = async (req, res) => {
       data: {
         categories,
         brands,
-        priceRange: priceRange.length > 0 ? 
-          [priceRange[0].minPrice, priceRange[0].maxPrice] : 
-          [0, 1000]
-      }
+        priceRange:
+          priceRange.length > 0
+            ? [priceRange[0].minPrice, priceRange[0].maxPrice]
+            : [0, 1000],
+      },
     });
   } catch (error) {
-    console.error('Error fetching filters:', error);
+    console.error("Error fetching filters:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching filters'
+      message: "Error fetching filters",
     });
   }
-}
+};
+
 const getAllProducts = async (req, res) => {
   try {
     // Extract query parameters

@@ -13,10 +13,15 @@ const getUserProfile = async (req, res) => {
   try {
     const id = req.params.id;
     const user = await User.findById(id);
+    const kyc = await Kyc.findOne({ userId: id });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.json(user);
+    // if (!kyc) {
+    //   res.status(404).json({ message: "KYC not found" });
+    // }
+    let usersdata = { user, kyc: kyc?.status || "notSubmitted" }
+    res.json(usersdata);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }

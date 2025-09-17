@@ -7,6 +7,7 @@ const {
   allwalletList,
   deleteWithdrawalRequest,
   generateWithdrawalReport,
+  approveWithdrawal
 } = require("../controllers/walletController");
 // const authMiddleware = require("../middleware/authMiddleware");
 
@@ -47,6 +48,12 @@ router.delete(
   "/delete-withdraw-request",
   // authMiddleware,
   deleteWithdrawalRequest
+);
+
+router.put(
+  "/:id/approve-withdrawal",
+  // authMiddleware,
+  approveWithdrawal
 );
 
 module.exports = router;

@@ -56,4 +56,10 @@ router.put(
   approveWithdrawal
 );
 
+router.put(
+  '/:id/reject-withdrawal',
+  // authMiddleware,
+  deleteWithdrawalRequest
+)
+
 module.exports = router;

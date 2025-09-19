@@ -126,16 +126,20 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please add a product description'],
     },
-    price: {
-      type: Number,
-      required: [true, 'Please add a base product price'],
-      maxlength: [8, 'Product price cannot exceed 8 characters'],
-      default: 0.0,
-    },
-    discountPrice: {
-      type: Number,
-      maxlength: [8, 'Discount price cannot exceed 8 characters'],
-    },
+    tax: {
+          type: Number,
+          default: 0,
+        },
+    // price: {
+    //   type: Number,
+    //   required: [true, 'Please add a base product price'],
+    //   maxlength: [8, 'Product price cannot exceed 8 characters'],
+    //   default: 0.0,
+    // },
+    // discountPrice: {
+    //   type: Number,
+    //   maxlength: [8, 'Discount price cannot exceed 8 characters'],
+    // },
 
     // ✅ Variants added here
     variants: [
@@ -152,6 +156,10 @@ const productSchema = new mongoose.Schema(
           type: Number,
           default: 0,
         },
+        // tax: {
+        //   type: Number,
+        //   default: 0,
+        // },
         images: [
           {
             public_id: {

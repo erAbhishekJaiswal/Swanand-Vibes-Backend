@@ -380,22 +380,6 @@ const createOrder = async (req, res) => {
     // ✅ Step 4: Remove ONLY purchased items from cart (FIXED)
     const cart = await Cart.findOne({ user: userId });
     if (cart) {
-      // Filter out the items that were just purchased
-      // cart.items = cart.items.filter(
-      //   cartItem => !cartItems.some(
-      //     orderItem => 
-      //       orderItem.product.toString() === cartItem.product.toString() &&
-      //       orderItem.variantId === cartItem.variantId &&
-      //       orderItem.size === cartItem.size
-      //   )
-      // );
-
-      // Recalculate total
-      // cart.total = cart.items.reduce(
-      //   (total, item) => total + item.price * item.qty,
-      //   0
-      // );
-
       // Remove all items from cart
       cart.items = [];
 

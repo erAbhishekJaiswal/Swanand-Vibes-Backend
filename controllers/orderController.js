@@ -74,6 +74,107 @@ const Product = require('../models/Product');
 
 const { distributeCommission } = require("../utils/commissionService");
 
+// const createOrder = async (req, res) => {
+//   try {
+//     const userId = req.params.userId;
+
+//     const {
+//       cartItems,
+//       itemsPrice,
+//       shippingPrice,
+//       taxPrice,
+//       totalPrice,
+//       address,
+//       apartment,
+//       city,
+//       country,
+//       email,
+//       mobile,
+//       shippingMethod,
+//       state,
+//       zipCode,
+//       paymentStatus,
+//       paidAt,
+//     } = req.body;
+
+//     // after add 
+//       // ✅ Step 1: Validate stock for each product
+//     for (const item of cartItems) {
+//       const product = await Product.findById(item.product);
+
+//       if (!product) {
+//         return res.status(404).json({
+//           success: false,
+//           error: `Product not found: ${item.product}`,
+//         });
+//       }
+
+//       if (product.countInStock < item.qty) {
+//         return res.status(400).json({
+//           success: false,
+//           error: `Not enough stock for ${product.name}. Available: ${product.countInStock}, Requested: ${item.qty}`,
+//         });
+//       }
+//     }
+
+//     // ✅ Step 2: Reduce stock
+//     for (const item of cartItems) {
+//       const product = await Product.findById(item.product);
+//       product.countInStock -= item.qty;
+//       await product.save();
+//     }
+
+
+//     // ✅ Create order
+//     const order = await Order.create({
+//       user: userId,
+//       orderItems: cartItems,
+//       itemsPrice,
+//       shippingPrice,
+//       taxPrice,
+//       totalPrice: itemsPrice + shippingPrice + taxPrice, // safer calc
+//       shippingAddress: {
+//         address,
+//         apartment,
+//         city,
+//         country,
+//         state,
+//         postalCode: zipCode,
+//       },
+//       shippingMethod,
+//       isPaid: true,
+//       paymentstaus:paymentStatus,
+//       paidAt,
+//       commissionsDistributed: false, // NEW FIELD in schema
+//     });
+
+//     // ✅ Remove purchased items from cart
+//     const cart = await Cart.findOne({ user: userId });
+//     if (cart) {
+//       cart.items = cart.items.filter(
+//         (item) => !cartItems.some((orderItem) => orderItem.product.toString() === item.product.toString())
+//       );
+//       await cart.save();
+//     }
+
+//     // ✅ Distribute commissions immediately after order is created & paid
+//     if (order.isPaid && !order.commissionsDistributed) {
+//       await distributeCommission(order._id);
+//     }
+
+//     res.status(201).json({
+//       success: true,
+//       data: order,
+//     });
+//   } catch (error) {
+//     res.status(400).json({
+//       success: false,
+//       error: error.message,
+//     });
+//   }
+// };
+
+
 const createOrder = async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -97,8 +198,7 @@ const createOrder = async (req, res) => {
       paidAt,
     } = req.body;
 
-    // after add 
-      // ✅ Step 1: Validate stock for each product
+    // ✅ Step 1: Validate stock
     for (const item of cartItems) {
       const product = await Product.findById(item.product);
 
@@ -124,8 +224,7 @@ const createOrder = async (req, res) => {
       await product.save();
     }
 
-
-    // ✅ Create order
+    // ✅ Step 3: Create order
     const order = await Order.create({
       user: userId,
       orderItems: cartItems,
@@ -143,30 +242,45 @@ const createOrder = async (req, res) => {
       },
       shippingMethod,
       isPaid: true,
-      paymentstaus:paymentStatus,
+      paymentStatus, // fixed typo
       paidAt,
-      commissionsDistributed: false, // NEW FIELD in schema
+      commissionsDistributed: false,
     });
 
-    // ✅ Remove purchased items from cart
+    // ✅ Step 4: Remove only purchased items from the cart
     const cart = await Cart.findOne({ user: userId });
     if (cart) {
       cart.items = cart.items.filter(
-        (item) => !cartItems.some((orderItem) => orderItem.product.toString() === item.product.toString())
+        (item) =>
+          !cartItems.some(
+            (orderItem) =>
+              orderItem.product.toString() === item.product.toString() &&
+              orderItem.variantId === item.variantId &&
+              orderItem.size === item.size
+          )
       );
+
+      // recalc total
+      cart.total = cart.items.reduce(
+        (total, item) => total + item.price * item.qty,
+        0
+      );
+
       await cart.save();
     }
 
-    // ✅ Distribute commissions immediately after order is created & paid
+    // ✅ Step 5: Distribute commissions
     if (order.isPaid && !order.commissionsDistributed) {
       await distributeCommission(order._id);
     }
 
     res.status(201).json({
       success: true,
+      message: "Order placed successfully. Ordered items removed from cart.",
       data: order,
     });
   } catch (error) {
+    console.error("Error creating order:", error);
     res.status(400).json({
       success: false,
       error: error.message,

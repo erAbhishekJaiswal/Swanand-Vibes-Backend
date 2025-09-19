@@ -174,6 +174,119 @@ const { distributeCommission } = require("../utils/commissionService");
 //   }
 // };
 
+//19-9
+// const createOrder = async (req, res) => {
+//   try {
+//     const userId = req.params.userId;
+
+//     const {
+//       cartItems,
+//       itemsPrice,
+//       shippingPrice,
+//       taxPrice,
+//       totalPrice,
+//       address,
+//       apartment,
+//       city,
+//       country,
+//       email,
+//       mobile,
+//       shippingMethod,
+//       state,
+//       zipCode,
+//       paymentStatus,
+//       paidAt,
+//     } = req.body;
+
+//     // ✅ Step 1: Validate stock
+//     for (const item of cartItems) {
+//       const product = await Product.findById(item.product);
+
+//       if (!product) {
+//         return res.status(404).json({
+//           success: false,
+//           error: `Product not found: ${item.product}`,
+//         });
+//       }
+
+//       if (product.countInStock < item.qty) {
+//         return res.status(400).json({
+//           success: false,
+//           error: `Not enough stock for ${product.name}. Available: ${product.countInStock}, Requested: ${item.qty}`,
+//         });
+//       }
+//     }
+
+//     // ✅ Step 2: Reduce stock
+//     for (const item of cartItems) {
+//       const product = await Product.findById(item.product);
+//       product.countInStock -= item.qty;
+//       await product.save();
+//     }
+
+//     // ✅ Step 3: Create order
+//     const order = await Order.create({
+//       user: userId,
+//       orderItems: cartItems,
+//       itemsPrice,
+//       shippingPrice,
+//       taxPrice,
+//       totalPrice: itemsPrice + shippingPrice + taxPrice, // safer calc
+//       shippingAddress: {
+//         address,
+//         apartment,
+//         city,
+//         country,
+//         state,
+//         postalCode: zipCode,
+//       },
+//       shippingMethod,
+//       isPaid: true,
+//       paymentStatus, // fixed typo
+//       paidAt,
+//       commissionsDistributed: false,
+//     });
+
+//     // ✅ Step 4: Remove only purchased items from the cart
+//     const cart = await Cart.findOne({ user: userId });
+//     if (cart) {
+//       cart.items = cart.items.filter(
+//         (item) =>
+//           !cartItems.some(
+//             (orderItem) =>
+//               orderItem.product.toString() === item.product.toString() &&
+//               orderItem.variantId === item.variantId &&
+//               orderItem.size === item.size
+//           )
+//       );
+
+//       // recalc total
+//       cart.total = cart.items.reduce(
+//         (total, item) => total + item.price * item.qty,
+//         0
+//       );
+
+//       await cart.save();
+//     }
+
+//     // ✅ Step 5: Distribute commissions
+//     if (order.isPaid && !order.commissionsDistributed) {
+//       await distributeCommission(order._id);
+//     }
+
+//     res.status(201).json({
+//       success: true,
+//       message: "Order placed successfully. Ordered items removed from cart.",
+//       data: order,
+//     });
+//   } catch (error) {
+//     console.error("Error creating order:", error);
+//     res.status(400).json({
+//       success: false,
+//       error: error.message,
+//     });
+//   }
+// };
 
 const createOrder = async (req, res) => {
   try {
@@ -184,7 +297,6 @@ const createOrder = async (req, res) => {
       itemsPrice,
       shippingPrice,
       taxPrice,
-      totalPrice,
       address,
       apartment,
       city,
@@ -209,29 +321,47 @@ const createOrder = async (req, res) => {
         });
       }
 
-      if (product.countInStock < item.qty) {
+      // Find the specific variant
+      const variant = product.variants.find(
+        v => v._id.toString() === item.variantId
+      );
+
+      if (!variant) {
+        return res.status(404).json({
+          success: false,
+          error: `Variant not found for product: ${product.name}`,
+        });
+      }
+
+      if (variant.stock < item.qty) {
         return res.status(400).json({
           success: false,
-          error: `Not enough stock for ${product.name}. Available: ${product.countInStock}, Requested: ${item.qty}`,
+          error: `Not enough stock for ${product.name} (Size: ${item.size}). Available: ${variant.stock}, Requested: ${item.qty}`,
         });
       }
     }
 
-    // ✅ Step 2: Reduce stock
+    // ✅ Step 2: Reduce stock for each variant
     for (const item of cartItems) {
       const product = await Product.findById(item.product);
-      product.countInStock -= item.qty;
-      await product.save();
+      const variant = product.variants.find(
+        v => v._id.toString() === item.variantId
+      );
+      
+      if (variant) {
+        variant.stock -= item.qty;
+        await product.save();
+      }
     }
 
-    // ✅ Step 3: Create order
+    // ✅ Step 3: Create Order
     const order = await Order.create({
       user: userId,
       orderItems: cartItems,
       itemsPrice,
       shippingPrice,
       taxPrice,
-      totalPrice: itemsPrice + shippingPrice + taxPrice, // safer calc
+      totalPrice: itemsPrice + shippingPrice + taxPrice,
       shippingAddress: {
         address,
         apartment,
@@ -242,45 +372,46 @@ const createOrder = async (req, res) => {
       },
       shippingMethod,
       isPaid: true,
-      paymentStatus, // fixed typo
+      paymentStatus,
       paidAt,
       commissionsDistributed: false,
     });
 
-    // ✅ Step 4: Remove only purchased items from the cart
+    // ✅ Step 4: Remove ONLY purchased items from cart (FIXED)
     const cart = await Cart.findOne({ user: userId });
     if (cart) {
-      cart.items = cart.items.filter(
-        (item) =>
-          !cartItems.some(
-            (orderItem) =>
-              orderItem.product.toString() === item.product.toString() &&
-              orderItem.variantId === item.variantId &&
-              orderItem.size === item.size
-          )
-      );
+      // Filter out the items that were just purchased
+      // cart.items = cart.items.filter(
+      //   cartItem => !cartItems.some(
+      //     orderItem => 
+      //       orderItem.product.toString() === cartItem.product.toString() &&
+      //       orderItem.variantId === cartItem.variantId &&
+      //       orderItem.size === cartItem.size
+      //   )
+      // );
 
-      // recalc total
-      cart.total = cart.items.reduce(
-        (total, item) => total + item.price * item.qty,
-        0
-      );
+      // Recalculate total
+      // cart.total = cart.items.reduce(
+      //   (total, item) => total + item.price * item.qty,
+      //   0
+      // );
+
+      // Remove all items from cart
+      cart.items = [];
 
       await cart.save();
     }
 
-    // ✅ Step 5: Distribute commissions
+    // ✅ Step 5: Commission Distribution
     if (order.isPaid && !order.commissionsDistributed) {
       await distributeCommission(order._id);
     }
 
     res.status(201).json({
       success: true,
-      message: "Order placed successfully. Ordered items removed from cart.",
       data: order,
     });
   } catch (error) {
-    console.error("Error creating order:", error);
     res.status(400).json({
       success: false,
       error: error.message,

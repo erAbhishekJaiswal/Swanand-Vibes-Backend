@@ -259,64 +259,128 @@ exports.allwalletList = async (req, res) => {
 // };
 
 
-
-
-
 exports.getWithdrawalRequests = async (req, res) => {
   try {
-    // Find wallets that may contain withdrawal transactions
-    const users = await Wallet.find({
-      "transactions.status": { $in: ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"] }
+    // Find wallets that contain withdrawal-related transactions
+    const wallets = await Wallet.find({
+      "transactions.status": { 
+        $in: ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"] 
+      }
     }).populate("user", "name email");
 
-    if (!users || users.length === 0) {
-      return res.status(404).json({ message: "No withdrawal requests found", users: [] });
+    if (!wallets || wallets.length === 0) {
+      return res.status(404).json({ 
+        message: "No withdrawal requests found", 
+        counts: { withdrawalRequested: 0, withdrawalApproved: 0, withdrawalRejected: 0 },
+        withdrawalRequests: [] 
+      });
     }
 
-    // Filter users to only include withdrawal-requested transactions
-    const filteredUsers = users.map((user) => {
-      const withdrawalTransactions = user.transactions.filter(
-        (tx) => tx.status === "withdrawal-requested"
+    // Build withdrawalRequests array
+    const withdrawalRequests = wallets.map(wallet => {
+      const withdrawalTransactions = wallet.transactions.filter(
+        (tx) => ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"].includes(tx.status)
       );
 
-      return withdrawalTransactions.length > 0
-        ? {
-            _id: user._id,
-            user: user.user,
-            balance: user.balance,
-            transactions: withdrawalTransactions,
+      if (withdrawalTransactions.length === 0) return null;
+
+      // Get the latest transaction
+      const latestTransaction = withdrawalTransactions[withdrawalTransactions.length - 1];
+
+      return {
+        _id: wallet._id,
+        user: wallet.user,
+        balance: wallet.balance,
+        transactions: [
+          {
+            _id: latestTransaction._id,
+            type: latestTransaction.type,
+            amount: latestTransaction.amount,
+            status: latestTransaction.status,
+            date: latestTransaction.date,
+            balanceAfter: latestTransaction.balanceAfter,
+            fromUser: latestTransaction.fromUser
           }
-        : null;
+        ]
+      };
     }).filter(Boolean);
 
-    // If no users have withdrawal-requested txns
-    if (filteredUsers.length === 0) {
-      return res.status(404).json({ message: "No withdrawal requests found", users: [] });
-    }
-
-    // Count totals of all withdrawal statuses across all wallets
-    const allTransactions = users.flatMap((user) => user.transactions);
-
+    // Count totals across all transactions
+    const allTransactions = wallets.flatMap(w => w.transactions);
     const counts = {
-      withdrawalRequested: allTransactions.filter(
-        (tx) => tx.status === "withdrawal-requested"
-      ).length,
-      withdrawalApproved: allTransactions.filter(
-        (tx) => tx.status === "withdrawal-approved"
-      ).length,
-      withdrawalRejected: allTransactions.filter(
-        (tx) => tx.status === "withdrawal-rejected"
-      ).length,
+      withdrawalRequested: allTransactions.filter(tx => tx.status === "withdrawal-requested").length,
+      withdrawalApproved: allTransactions.filter(tx => tx.status === "withdrawal-approved").length,
+      withdrawalRejected: allTransactions.filter(tx => tx.status === "withdrawal-rejected").length,
     };
 
     res.json({
       counts,
-      withdrawalRequests: filteredUsers,
+      withdrawalRequests
     });
+
   } catch (error) {
+    console.error("Error fetching withdrawal requests:", error);
     res.status(500).json({ message: "Server error", error });
   }
 };
+
+
+
+// exports.getWithdrawalRequests = async (req, res) => {
+//   try {
+//     // Find wallets that may contain withdrawal transactions
+//     const users = await Wallet.find({
+//       "transactions.status": { $in: ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"] }
+//     }).populate("user", "name email");
+
+//     if (!users || users.length === 0) {
+//       return res.status(404).json({ message: "No withdrawal requests found", users: [] });
+//     }
+
+//     // Filter users to only include withdrawal-requested transactions
+//     const filteredUsers = users.map((user) => {
+//       const withdrawalTransactions = user.transactions.filter(
+//         (tx) => tx.status === "withdrawal-requested"
+//       );
+
+//       return withdrawalTransactions.length > 0
+//         ? {
+//             _id: user._id,
+//             user: user.user,
+//             balance: user.balance,
+//             transactions: withdrawalTransactions,
+//           }
+//         : null;
+//     }).filter(Boolean);
+
+//     // If no users have withdrawal-requested txns
+//     if (filteredUsers.length === 0) {
+//       return res.status(404).json({ message: "No withdrawal requests found", users: [] });
+//     }
+
+//     // Count totals of all withdrawal statuses across all wallets
+//     const allTransactions = users.flatMap((user) => user.transactions);
+
+//     const counts = {
+//       withdrawalRequested: allTransactions.filter(
+//         (tx) => tx.status === "withdrawal-requested"
+//       ).length,
+//       withdrawalApproved: allTransactions.filter(
+//         (tx) => tx.status === "withdrawal-approved"
+//       ).length,
+//       withdrawalRejected: allTransactions.filter(
+//         (tx) => tx.status === "withdrawal-rejected"
+//       ).length,
+//     };
+
+//     res.json({
+//       counts,
+//       withdrawalRequests: filteredUsers,
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error", error });
+//   }
+// };
 
 
 

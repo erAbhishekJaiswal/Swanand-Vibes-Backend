@@ -579,59 +579,62 @@ const getFilters = async (req, res) => {
   }
 };
 
-const getAllProducts = async (req, res) => {
-  try {
-    // Extract query parameters
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const search = req.query.search || '';
-    // const category = req.query.category || '';
+// const getAllProducts = async (req, res) => {
+//   try {
+//     // Extract query parameters
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 10;
+//     const search = req.query.search || '';
+//     // const category = req.query.category || '';
 
-    const skip = (page - 1) * limit;
+//     const skip = (page - 1) * limit;
 
-    // Build dynamic query object
-    // const query = {};
+//     // Build dynamic query object
+//     // const query = {};
 
-    // if (search) {
-    //   query.name = { $regex: search, $options: 'i' }; // Case-insensitive search
-    // }
+//     // if (search) {
+//     //   query.name = { $regex: search, $options: 'i' }; // Case-insensitive search
+//     // }
 
-    // if (category) {
-    //   query.category = category;
-    // }
+//     // if (category) {
+//     //   query.category = category;
+//     // }
 
-    const query = {};
+//     const query = {};
 
-if (search && search.trim() !== '') {
-  query.name = { $regex: search, $options: 'i' };
-}
-
-// if (category && category.trim() !== '') {
-//   query.category = category;
+// if (search && search.trim() !== '') {
+//   query.name = { $regex: search, $options: 'i' };
 // }
 
+// // if (category && category.trim() !== '') {
+// //   query.category = category;
+// // }
 
-    // Fetch filtered and paginated products
-    const products = await Product.find(query).skip(skip).limit(limit);
 
-    // Get total count of filtered products
-    const total = await Product.countDocuments(query);
+//     // Fetch filtered and paginated products
+//     const products = await Product.find(query).skip(skip).limit(limit);
 
-    res.status(200).json({
-      success: true,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-      totalItems: total,
-      data: products,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      error: error.message,
-    });
-  }
-};
+//     // Get total count of filtered products
+//     const total = await Product.countDocuments(query);
+
+//     res.status(200).json({
+//       success: true,
+//       page,
+//       limit,
+//       totalPages: Math.ceil(total / limit),
+//       totalItems: total,
+//       data: products,
+//     });
+//   } catch (error) {
+//     res.status(400).json({
+//       success: false,
+//       error: error.message,
+//     });
+//   }
+// };
+
+
+//20-9-2025
 
 // const getCommonProducts = async (req, res) => {
 //   const { page = 1, limit = 10, search = '', category = '', minPrice, maxPrice, brands, minRating, sort } = req.query;
@@ -684,6 +687,66 @@ if (search && search.trim() !== '') {
 //     data: productlist
 //   });
 // };
+
+
+
+const getAllProducts = async (req, res) => {
+  try {
+    // Extract query parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || '';
+    const category = req.query.category || '';
+    const showInactive = req.query.showInactive === 'true'; // Optional flag to show inactive products
+
+    const skip = (page - 1) * limit;
+
+    // Build dynamic query
+    const query = {};
+
+    // Search by product name (case-insensitive)
+    if (search.trim()) {
+      query.name = { $regex: search.trim(), $options: 'i' };
+    }
+
+    // Filter by category (only if valid ObjectId format)
+    if (category.trim()) {
+      query.category = category.trim();
+    }
+
+    // Filter by active status unless admin explicitly wants to see all
+    if (!showInactive) {
+      query.isActive = true;
+    }
+
+    // Fetch filtered and paginated products
+    const products = await Product.find(query)
+      .populate('category') // Optional: populate category name
+      .populate('createdBy') // Optional: show who created the product
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 }); // newest first
+
+    // Get total count
+    const total = await Product.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      data: products,
+    });
+
+  } catch (error) {
+    console.error('Error in getAllProducts:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server Error',
+    });
+  }
+};
 
 
 const getCommonProducts = async (req, res) => {

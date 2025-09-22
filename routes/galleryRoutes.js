@@ -19,9 +19,10 @@ router.post("/", createImage);
 // View
 router.get("/", getAllImages);
 router.get('/common', getAllgallery)
+router.get("/:category", getImagesByCategory);
 router.get("/:id", getImageById);
 
-router.get("/:category", getImagesByCategory);
+
 
 // Update
 router.put("/:id", 

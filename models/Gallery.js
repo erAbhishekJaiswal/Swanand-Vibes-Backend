@@ -6,7 +6,7 @@ const gallerySchema = new mongoose.Schema(
     title: { type: String, required: true },
     category: {
       type: String,
-      enum: ["Certificate", "Business Plan", "Product Catalog"],
+      enum: ["Certificate", "Business Plan", "Product Catalog", "Banner"],
       required: true,
     },
     imageUrl: { type: String, required: true }, // store image path

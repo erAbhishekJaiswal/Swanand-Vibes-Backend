@@ -78,7 +78,7 @@ exports.getImagesByCategory = async (req, res) => {
     const images = await Gallery.find({ category: req.params.category });
     res.json(images);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error });
   }
 };
 

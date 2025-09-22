@@ -890,10 +890,45 @@ const clearCart = async (req, res) => {
   }
 };
 
+// Update the quantity of an item in the cart
+const updateCartItem = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { itemId, quantity } = req.body;
+    const cart = await Cart.findOne({ user: userId });
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        error: "Cart not found",
+      });
+    }
+    const item = cart.items.find((item) => item._id.toString() === itemId);
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        error: "Item not found in cart",
+      });
+    }
+    item.qty = quantity;
+    await cart.save();
+    res.status(200).json({
+      success: true,
+      data: cart,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+
 module.exports = {
   addToCart,
   removeFromCart,
   getCart,
   clearCart,
+  updateCartItem
   // addToCartwithVariant
 };

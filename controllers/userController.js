@@ -252,8 +252,10 @@ const deleteUser = async (req, res) => {
 // update user address
 const updateUserAddress = async (req, res) => {
   try {
-    const { address } = req.body;
-    const user = await User.findByIdAndUpdate(req.params.id, { address }, {
+    // const { address } = req.body;
+    // console.log(req.body);
+    
+    const user = await User.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
     });

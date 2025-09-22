@@ -13,8 +13,9 @@ const razorpay = new Razorpay({
 // Create order API
 router.post("/create-order", async (req, res) => {
   try {
+    const amount = Math.round(req.body.amount); // Ensure it's an integer
     const options = {
-      amount: req.body.amount * 100, // amount in paise
+      amount: amount, // amount in paise
       currency: "INR",
       receipt: `order_rcptid_${Math.floor(Math.random() * 10000)}`,
     };
@@ -22,6 +23,7 @@ router.post("/create-order", async (req, res) => {
     const order = await razorpay.orders.create(options);
     res.json(order);
   } catch (error) {
+    console.error("Razorpay order creation error:", error);
     res.status(500).send(error);
   }
 });

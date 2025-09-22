@@ -6,7 +6,7 @@ const {
   clearCart,
   // addToCartwithVariant
 //   getCartItems,
-//   updateCartItem,
+  updateCartItem,
 //   removeCartItem,
 } = require("../controllers/cartController");
 
@@ -15,7 +15,7 @@ router.delete("/remove", removeFromCart);
 router.post("/:id", addToCart);
 // router.post("/product/:id", addToCartwithVariant);
 router.get("/:id", getCart);
-// router.put("/:id", updateCartItem);
+router.put("/:id", updateCartItem);
 
 router.delete("/:id/clear", clearCart);
 

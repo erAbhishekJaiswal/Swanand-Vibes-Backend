@@ -1051,8 +1051,8 @@ const exportStockReport = async (req, res) => {
       { header: "Product Name", key: "name", width: 30 },
       { header: "Category", key: "category", width: 20 },
       { header: "Brand", key: "brand", width: 20 },
-      { header: "Base Price", key: "price", width: 15 },
-      { header: "Discount Price", key: "discountPrice", width: 15 },
+      // { header: "Base Price", key: "price", width: 15 },
+      // { header: "Discount Price", key: "discountPrice", width: 15 },
       { header: "Base Stock", key: "stock", width: 15 },
       { header: "Variant Size", key: "variantSize", width: 15 },
       { header: "Variant Price", key: "variantPrice", width: 15 },
@@ -1068,8 +1068,8 @@ const exportStockReport = async (req, res) => {
             name: product.name,
             category: product.category?.name || "N/A",
             brand: product.brand,
-            price: product.price,
-            discountPrice: product.discountPrice || "-",
+            // price: product.price,
+            // discountPrice: product.discountPrice || "-",
             stock: product.stock,
             variantSize: variant.size,
             variantPrice: variant.price,
@@ -1365,7 +1365,7 @@ const getCommonProductById = async (req, res) => {
 // Get a single product by ID for Admin
 const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id).populate('category', 'name');
     if (!product) {
       return res.status(404).json({
         success: false,

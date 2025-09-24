@@ -425,7 +425,7 @@ const getAllOrders = async (req, res) => {
     // ✅ Search filter (name, email, orderId)
     if (search) {
       query.$or = [
-        { _id: search }, // direct orderId match
+        { "name": { $regex: search, $options: "i" } }, // case-insensitive name matching": search }, // direct orderId match
         { "shippingAddress.email": { $regex: search, $options: "i" } },
         { "shippingAddress.mobile": { $regex: search, $options: "i" } },
       ];

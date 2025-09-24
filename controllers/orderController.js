@@ -404,88 +404,88 @@ const createOrder = async (req, res) => {
 };
 
 
-const getAllOrders = async (req, res) => {
-  try {
-    let { page = 1, limit = 10, search, startDate, endDate } = req.query;
+// const getAllOrders = async (req, res) => {
+//   try {
+//     let { page = 1, limit = 10, search, startDate, endDate } = req.query;
 
-    page = Number(page);
-    limit = Number(limit);
+//     page = Number(page);
+//     limit = Number(limit);
 
-    // Base query
-    let query = {};
+//     // Base query
+//     let query = {};
 
-    // ✅ Date filter
-    if (startDate && endDate) {
-      query.createdAt = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate),
-      };
-    }
+//     // ✅ Date filter
+//     if (startDate && endDate) {
+//       query.createdAt = {
+//         $gte: new Date(startDate),
+//         $lte: new Date(endDate),
+//       };
+//     }
 
-    // ✅ Search filter (name, email, orderId)
-    if (search) {
-      query.$or = [
-        { "user.name": { $regex: search, $options: "i" } }, // case-insensitive name matching": search }, // direct orderId match
-        { "user.email": { $regex: search, $options: "i" } },
-        // { "user.mobile": { $regex: search, $options: "i" } },
-      ];
-    }
+//     // ✅ Search filter (name, email, orderId)
+//     if (search) {
+//       query.$or = [
+//         { "user.name": { $regex: search, $options: "i" } }, // case-insensitive name matching": search }, // direct orderId match
+//         { "user.email": { $regex: search, $options: "i" } },
+//         // { "user.mobile": { $regex: search, $options: "i" } },
+//       ];
+//     }
 
-    // Fetch orders with filters
-    const orders = await Order.find(query)
-      .populate("user", "name email")
-      .populate("orderItems.product", "name price image")
-      .sort({ createdAt: -1 }) // latest orders first
-      .skip((page - 1) * limit)
-      .limit(limit);
+//     // Fetch orders with filters
+//     const orders = await Order.find(query)
+//       .populate("user", "name email")
+//       .populate("orderItems.product", "name price image")
+//       .sort({ createdAt: -1 }) // latest orders first
+//       .skip((page - 1) * limit)
+//       .limit(limit);
 
-    // Total count for pagination
-    const totalOrders = await Order.countDocuments(query);
+//     // Total count for pagination
+//     const totalOrders = await Order.countDocuments(query);
 
-    res.status(200).json({
-      success: true,
-      page,
-      limit,
-      totalOrders,
-      totalPages: Math.ceil(totalOrders / limit),
-      data: orders.map(order => ({
-        _id: order._id,
-        user: order.user
-          ? {
-              _id: order.user._id,
-              name: order.user.name,
-              email: order.user.email,
-            }
-          : null,
-        orderItems: order.orderItems.map(item => ({
-          product: item.product?._id,
-          name: item.product?.name || item.name,
-          price: item.price,
-          quantity: item.quantity,
-          image: item.product?.image || item.image,
-        })),
-        shippingAddress: order.shippingAddress,
-        paymentMethod: order.paymentMethod,
-        itemsPrice: order.itemsPrice,
-        taxPrice: order.taxPrice,
-        shippingPrice: order.shippingPrice,
-        totalPrice: order.totalPrice,
-        isPaid: order.isPaid,
-        paidAt: order.paidAt,
-        isDelivered: order.isDelivered,
-        deliveryStatus: order.deliveryStatus,
-        deliveredAt: order.deliveredAt,
-        createdAt: order.createdAt,
-        updatedAt: order.updatedAt,
-      })),
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      error: error.message,
-    });
-  }
-};
+//     res.status(200).json({
+//       success: true,
+//       page,
+//       limit,
+//       totalOrders,
+//       totalPages: Math.ceil(totalOrders / limit),
+//       data: orders.map(order => ({
+//         _id: order._id,
+//         user: order.user
+//           ? {
+//               _id: order.user._id,
+//               name: order.user.name,
+//               email: order.user.email,
+//             }
+//           : null,
+//         orderItems: order.orderItems.map(item => ({
+//           product: item.product?._id,
+//           name: item.product?.name || item.name,
+//           price: item.price,
+//           quantity: item.quantity,
+//           image: item.product?.image || item.image,
+//         })),
+//         shippingAddress: order.shippingAddress,
+//         paymentMethod: order.paymentMethod,
+//         itemsPrice: order.itemsPrice,
+//         taxPrice: order.taxPrice,
+//         shippingPrice: order.shippingPrice,
+//         totalPrice: order.totalPrice,
+//         isPaid: order.isPaid,
+//         paidAt: order.paidAt,
+//         isDelivered: order.isDelivered,
+//         deliveryStatus: order.deliveryStatus,
+//         deliveredAt: order.deliveredAt,
+//         createdAt: order.createdAt,
+//         updatedAt: order.updatedAt,
+//       })),
+//     });
+//   } catch (error) {
+//     res.status(400).json({
+//       success: false,
+//       error: error.message,
+//     });
+//   }
+// };
 
 
 
@@ -533,6 +533,89 @@ const getAllOrders = async (req, res) => {
 //     });
 //   }
 // };
+
+const getAllOrders = async (req, res) => {
+  try {
+    let { page = 1, limit = 10, search, startDate, endDate } = req.query;
+
+    page = Number(page);
+    limit = Number(limit);
+
+    // Date filter
+    let query = {};
+    if (startDate && endDate) {
+      query.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    }
+
+    // Fetch all matching orders
+    let orders = await Order.find(query)
+      .populate("user", "name email")
+      .populate("orderItems.product", "name price image")
+      .sort({ createdAt: -1 });
+
+    // Apply search filtering manually in JS
+    if (search) {
+      const lowerSearch = search.toLowerCase();
+      orders = orders.filter((order) =>
+        order._id.toString().includes(search) ||
+        order?.user?.name?.toLowerCase().includes(lowerSearch) ||
+        order?.user?.email?.toLowerCase().includes(lowerSearch) ||
+        order?.shippingAddress?.email?.toLowerCase().includes(lowerSearch) ||
+        order?.shippingAddress?.mobile?.toLowerCase().includes(lowerSearch)
+      );
+    }
+
+    const totalOrders = orders.length;
+    const totalPages = Math.ceil(totalOrders / limit);
+    const paginatedOrders = orders.slice((page - 1) * limit, page * limit);
+
+    res.status(200).json({
+      success: true,
+      page,
+      limit,
+      totalOrders,
+      totalPages,
+      data: paginatedOrders.map(order => ({
+        _id: order._id,
+        user: order.user
+          ? {
+              _id: order.user._id,
+              name: order.user.name,
+              email: order.user.email,
+            }
+          : null,
+        orderItems: order.orderItems.map(item => ({
+          product: item.product?._id,
+          name: item.product?.name || item.name,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.product?.image || item.image,
+        })),
+        shippingAddress: order.shippingAddress,
+        paymentMethod: order.paymentMethod,
+        itemsPrice: order.itemsPrice,
+        taxPrice: order.taxPrice,
+        shippingPrice: order.shippingPrice,
+        totalPrice: order.totalPrice,
+        isPaid: order.isPaid,
+        paidAt: order.paidAt,
+        isDelivered: order.isDelivered,
+        deliveryStatus: order.deliveryStatus,
+        deliveredAt: order.deliveredAt,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+      })),
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
 
 
 const getUserOrders = async (req, res) => {

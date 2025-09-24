@@ -406,7 +406,7 @@ const createOrder = async (req, res) => {
 
 const getAllOrders = async (req, res) => {
   try {
-    let { page = 1, limit = 10, search = "", startDate, endDate } = req.query;
+    let { page = 1, limit = 10, search, startDate, endDate } = req.query;
 
     page = Number(page);
     limit = Number(limit);

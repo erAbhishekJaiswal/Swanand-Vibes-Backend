@@ -114,14 +114,155 @@ exports.submitKyc = async (req, res) => {
 };
 
 // GET: Fetch all KYC records
+// exports.getAllKycs = async (req, res) => {
+//   try {
+//       let {page = 1, limit = 10, search, startDate, endDate, status} = req.query;
+
+//       console.log(req.query);
+      
+//       page = Number(page);
+//       limit = Number(limit);
+
+//           // Date filter
+//     let query = {};
+//     if (startDate && endDate) {
+//       query.createdAt = {
+//         $gte: new Date(startDate),
+//         $lte: new Date(endDate),
+//       };
+//     }
+
+//     // Status filter
+//     if (status) {
+//       query.status = status;
+//     }
+
+//     const kycs = await Kyc.find(query)
+//     .populate('userId', 'name email')
+//     .skip((page - 1) * limit)
+//     .limit(limit);
+
+//     console.log(kycs);
+    
+
+//         // Apply search filtering manually in JS
+//     if (search) {
+//       const lowerSearch = search.toLowerCase();
+//       kycs = kycs.filter((kyc) =>
+//         kyc._id.toString().includes(search) ||
+//         kyc?.user?.name?.toLowerCase().includes(lowerSearch) ||
+//         kyc?.user?.email?.toLowerCase().includes(lowerSearch) ||
+//         kyc?.adharName?.toLowerCase().includes(lowerSearch) ||
+//         kyc?.bankName?.toLowerCase().includes(lowerSearch)
+//       );
+//       console.log(kycs);
+      
+//     }
+
+
+
+//     // if (search) {
+//     //   kycs = await Kyc.find({
+//     //     $or: [
+//     //       { adharName: { $regex: search, $options: 'i' } },
+//     //       { bankName: { $regex: search, $options: 'i' } },
+//     //     ],
+//     //   }).populate('userId', 'name email');
+//     // }
+
+//     const totalKycs = kycs.length;
+//     const totalPages = Math.ceil(totalKycs / limit);
+//     const paginatedOrders = kycs.slice((page - 1) * limit, page * limit);
+
+
+//     res.status(200).json({
+//       // kycs,
+//       currentPage: page,
+//       totalPages,
+//       totalKycs,
+//       paginatedOrders
+//     });
+
+//     // const kycs = await Kyc.find().populate('userId', 'name email');
+//     // res.status(200).json({ kycs });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Failed to fetch KYC records', error });
+//   }
+// };
+
 exports.getAllKycs = async (req, res) => {
   try {
-    const kycs = await Kyc.find().populate('userId', 'name email');
-    res.status(200).json(kycs);
+    let { page = 1, limit = 10, search, startDate, endDate, status } = req.query;
+
+    page = Number(page);
+    limit = Number(limit);
+
+    // ✅ Build MongoDB query
+    let query = {};
+
+    // ✅ Date filter
+    if (startDate && endDate) {
+      query.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    }
+
+    // ✅ Status filter
+    if (status) {
+      query.status = status;
+    }
+
+    // ✅ If search is present, fetch full list and filter in JS
+    let kycs;
+
+    if (search) {
+      const allKycs = await Kyc.find(query).populate('userId', 'name email');
+
+      const lowerSearch = search.toLowerCase();
+      kycs = allKycs.filter((kyc) =>
+        kyc._id.toString().includes(search) ||
+        kyc?.userId?.name?.toLowerCase().includes(lowerSearch) ||
+        kyc?.userId?.email?.toLowerCase().includes(lowerSearch) ||
+        kyc?.adharName?.toLowerCase().includes(lowerSearch) ||
+        kyc?.bankName?.toLowerCase().includes(lowerSearch)
+      );
+
+    } else {
+      // ✅ No search — apply pagination at DB level
+      kycs = await Kyc.find(query)
+        .populate('userId', 'name email')
+        .skip((page - 1) * limit)
+        .limit(limit);
+    }
+
+    const totalKycs = search
+      ? kycs.length // After filtering
+      : await Kyc.countDocuments(query); // Raw count from DB
+
+    const totalPages = Math.ceil(totalKycs / limit);
+
+    // ✅ Paginate in-memory only when search is applied
+    const paginatedKycs = search
+      ? kycs.slice((page - 1) * limit, page * limit)
+      : kycs;
+
+    res.status(200).json({
+      success: true,
+      currentPage: page,
+      totalPages,
+      totalKycs,
+      data: paginatedKycs,
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch KYC records', error });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch KYC records',
+      error: error.message,
+    });
   }
 };
+
 
 // GET: Fetch KYC by user ID
 exports.getKycByUserId = async (req, res) => {

@@ -109,7 +109,7 @@ const orderSchema = new mongoose.Schema({
   totalPrice: { type: Number, required: true },
   isPaid: { type: Boolean, default: false },
   paidAt: Date,
-  deliveryStatus: { type: String, enum: ["pending", "shipped", "delivered"], default: "pending" },
+  deliveryStatus: { type: String, enum: ["pending", "shipped", "delivered", "cancelled"], default: "pending" },
   commissionsDistributed: { type: Boolean, default: false },
   deliveredAt: Date,
 }, { timestamps: true });

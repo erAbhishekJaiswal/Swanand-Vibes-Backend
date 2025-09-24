@@ -568,6 +568,11 @@ const getAllOrders = async (req, res) => {
       );
     }
 
+    //total pending orders
+    const totalPendingOrders = await Order.countDocuments({ deliveryStatus : "pending" });
+    const totalDeliveredOrders = await Order.countDocuments({ deliveryStatus : "delivered" });
+    const totalCancelledOrders = await Order.countDocuments({ deliveryStatus : "cancelled" });
+    const totalshippedOrders = await Order.countDocuments({ deliveryStatus : "shipped" });
     const totalOrders = orders.length;
     const totalPages = Math.ceil(totalOrders / limit);
     const paginatedOrders = orders.slice((page - 1) * limit, page * limit);
@@ -578,6 +583,10 @@ const getAllOrders = async (req, res) => {
       limit,
       totalOrders,
       totalPages,
+      totalPendingOrders,
+      totalDeliveredOrders,
+      totalshippedOrders,
+      totalCancelledOrders,
       data: paginatedOrders.map(order => ({
         _id: order._id,
         user: order.user

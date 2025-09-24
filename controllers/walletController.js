@@ -629,3 +629,189 @@ exports.generateWithdrawalReport = async (req, res) => {
   }
 };
 
+
+// get top large amount withdrawal users
+// exports.getTopLargeAmountWithdrawalUsers = async (req, res) => {
+//   try {
+//     const { start, end } = req.query;
+
+//     const startDate = start ? new Date(start) : new Date("1970-01-01");
+//     const endDate = end ? new Date(end) : new Date();
+
+//     // Fetch wallets with withdrawal transactions in range
+//     // const wallets = await Wallet.find({
+//     //   "transactions": {
+//     //     $elemMatch: {
+//     //       status: { $in: ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"] },
+//     //       date: { $gte: startDate, $lte: endDate },
+//     //     },
+//     //   },
+//     // }).populate("user", "name email mobile");
+
+//     const wallets = await Wallet.find({
+//   transactions: {
+//     $elemMatch: {
+//       status: { $in: ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"] },
+//       date: { $gte: startDate, $lte: endDate },
+//     },
+//   },
+// }).populate("user", "name email mobile")
+//   .populate("transactions.fromUser", "_id"); // 👈 this line
+  
+//     const withdrawalRequests = wallets.flatMap((wallet) =>
+//       wallet.transactions.filter(
+//         (txn) =>
+//           ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"].includes(
+//             txn.status?.toLowerCase()
+//           ) &&
+//           txn.date >= startDate &&
+//           txn.date <= endDate
+//       )
+//     );
+
+//     // Calculate total withdrawal amount for each user
+//     // const withdrawalAmounts = withdrawalRequests.reduce((acc, txn) => {
+//     //   const user = txn.fromUser;
+//     //   acc[user._id] = (acc[user._id] || 0) + txn.amount;
+//     //   return acc;
+//     // }, {});
+
+//     const withdrawalAmounts = withdrawalRequests.reduce((acc, txn) => {
+//   const user = txn.fromUser;
+//   if (user && user._id) {
+//     acc[user._id] = (acc[user._id] || 0) + txn.amount;
+//   }
+//   return acc;
+// }, {});
+
+
+//     // Sort users by withdrawal amount in descending order
+//     const sortedUsers = Object.entries(withdrawalAmounts)
+//       .map(([userId, amount]) => ({ userId, amount }))
+//       .sort((a, b) => b.amount - a.amount);
+
+//     res.json(sortedUsers);
+//   } catch (error) {
+//     console.error("Error fetching top withdrawal users:", error);
+//     res.status(500).send("Failed to fetch top withdrawal users");
+//   }
+// };
+
+
+
+
+
+
+// Get users with the largest withdrawal amounts in a date range
+// exports.getTopLargeAmountWithdrawalUsers = async (req, res) => {
+//   try {
+//     const { start, end } = req.query;
+
+//     const startDate = start ? new Date(start) : new Date("1970-01-01");
+//     const endDate = end ? new Date(end) : new Date();
+
+//     // Fetch all wallets with transactions containing withdrawal statuses in the date range
+//     const wallets = await Wallet.find({
+//       transactions: {
+//         $elemMatch: {
+//           status: { 
+//             $in: ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"] 
+//           },
+//           date: { $gte: startDate, $lte: endDate },
+//         },
+//       },
+//     })
+//       .populate("user", "name email mobile")                 // Populate wallet owner
+//       .populate("transactions.fromUser", "_id name email");  // Populate who triggered the transaction
+
+//     // Extract all matching withdrawal transactions
+//     const withdrawalRequests = wallets.flatMap(wallet =>
+//       wallet.transactions
+//         .filter(txn =>
+//           ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"].includes(
+//             txn.status?.toLowerCase()
+//           ) &&
+//           txn.date >= startDate &&
+//           txn.date <= endDate &&
+//           txn.fromUser // Ensure fromUser exists
+//         )
+//         .map(txn => ({
+//           userId: txn.fromUser._id.toString(),
+//           amount: txn.amount,
+//         }))
+//     );
+
+//     // Sum up total withdrawal amount per user
+//     const withdrawalTotals = withdrawalRequests.reduce((acc, { userId, amount }) => {
+//       acc[userId] = (acc[userId] || 0) + amount;
+//       return acc;
+//     }, {});
+
+//     // Sort users by total withdrawal amount (descending)
+//     const sortedUsers = Object.entries(withdrawalTotals)
+//       .map(([userId, amount]) => ({ userId, amount }))
+//       .sort((a, b) => b.amount - a.amount);
+
+//     res.json(sortedUsers);
+//   } catch (error) {
+//     console.error("Error fetching top withdrawal users:", error);
+//     res.status(500).send("Failed to fetch top withdrawal users");
+//   }
+// };
+
+
+
+exports.getTopLargeAmountWithdrawalUsers = async (req, res) => {
+  try {
+    const { start, end } = req.query;
+
+    const startDate = start ? new Date(start) : new Date("1970-01-01");
+    const endDate = end ? new Date(end) : new Date();
+
+    const wallets = await Wallet.find({})
+      .populate("user", "name email mobile");
+
+    // console.log(`Total wallets: ${wallets}`);
+
+    const withdrawalRequests = wallets.flatMap(wallet =>
+      wallet.transactions
+        .filter(txn =>
+          ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"].includes(txn.status?.toLowerCase()) &&
+          txn.date >= startDate &&
+          txn.date <= endDate &&
+          wallet.user
+        )
+        .map(txn => ({
+          userId: wallet.user._id.toString(),
+          amount: txn.amount,
+        }))
+    );
+
+    const withdrawalTotals = withdrawalRequests.reduce((acc, { userId, amount }) => {
+      acc[userId] = (acc[userId] || 0) + amount;
+      return acc;
+    }, {});
+
+    const sortedUsers = Object.entries(withdrawalTotals)
+      .map(([userId, amount]) => ({ userId, amount }))
+      .sort((a, b) => b.amount - a.amount);
+
+    // user details
+    const users = await User.find({ _id: { $in: sortedUsers.map(user => user.userId) } });
+
+    sortedUsers.forEach(user => {
+      const foundUser = users.find(u => u._id.toString() === user.userId);
+      if (foundUser) {
+        user.name = foundUser.name;
+        user.email = foundUser.email;
+        user.mobile = foundUser.mobile;
+      }
+    });
+
+    res.json(sortedUsers);
+  } catch (error) {
+    console.error("Error fetching top withdrawal users:", error);
+    res.status(500).send("Failed to fetch top withdrawal users");
+  }
+};
+

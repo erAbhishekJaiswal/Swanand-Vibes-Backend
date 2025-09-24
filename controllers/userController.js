@@ -361,6 +361,28 @@ const adminDashboard = async (req, res) => {
       { $count: "count" }
     ]);
 
+    // Total withdrawal amount
+    const withdrawalAmount = await Wallet.aggregate([
+      { $unwind: "$transactions" },
+      { $match: { "transactions.status": { $in: ["withdrawal-requested", "withdrawal-approved"] } } },
+      { $group: { _id: null, totalAmount: { $sum: "$transactions.amount" } } }
+    ]);
+
+    // Total deposit amount
+    // const depositAmount = await Wallet.aggregate([
+    //   { $unwind: "$transactions" },
+    //   { $match: { "transactions.status": "completed" } },
+    //   { $group: { _id: null, totalAmount: { $sum: "$transactions.amount" } } }
+    // ]);
+
+    // total amount have in wallet
+    const totalAmount = await Wallet.aggregate([
+      { $unwind: "$transactions" },
+      { $match: { "transactions.status": "completed" } },
+      { $group: { _id: null, totalAmount: { $sum: "$transactions.amount" } } }
+    ]);
+
+    // ✅ Deposit count
     const depositCount = await Wallet.aggregate([
       { $unwind: "$transactions" },
       { $match: { "transactions.type": "credit", "transactions.status": "completed" } },
@@ -377,6 +399,9 @@ const adminDashboard = async (req, res) => {
       orderCompletedCount,
       contactCount,
       kycPendingCount,
+      withdrawalAmount: withdrawalAmount.length > 0 ? withdrawalAmount[0].totalAmount : 0,
+      // depositAmount: depositAmount.length > 0 ? depositAmount[0].totalAmount : 0,
+      totalAmount: totalAmount.length > 0 ? totalAmount[0].totalAmount : 0
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

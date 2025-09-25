@@ -232,6 +232,7 @@ exports.getAllKycs = async (req, res) => {
       // ✅ No search — apply pagination at DB level
       kycs = await Kyc.find(query)
         .populate('userId', 'name email')
+        .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit);
     }

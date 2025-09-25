@@ -408,6 +408,62 @@ const adminDashboard = async (req, res) => {
   }
 };
 
+const TopWithdrawalUsers = async (req, res) => {
+  try {
+    // const { start, end } = req.query;
+    const start = new Date("1970-01-01")
+    const end = new Date()
+
+    const startDate = start ? new Date(start) : new Date("1970-01-01");
+    const endDate = end ? new Date(end) : new Date();
+
+    const wallets = await Wallet.find({})
+      .populate("user", "name email mobile");
+
+    // console.log(`Total wallets: ${wallets}`);
+
+    const withdrawalRequests = wallets.flatMap(wallet =>
+      wallet.transactions
+        .filter(txn =>
+          ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"].includes(txn.status?.toLowerCase()) &&
+          txn.date >= startDate &&
+          txn.date <= endDate &&
+          wallet.user
+        )
+        .map(txn => ({
+          userId: wallet.user._id.toString(),
+          amount: txn.amount,
+        }))
+    );
+
+    const withdrawalTotals = withdrawalRequests.reduce((acc, { userId, amount }) => {
+      acc[userId] = (acc[userId] || 0) + amount;
+      return acc;
+    }, {});
+
+    const sortedUsers = Object.entries(withdrawalTotals)
+      .map(([userId, amount]) => ({ userId, amount }))
+      .sort((a, b) => b.amount - a.amount);
+
+    // user details
+    const users = await User.find({ _id: { $in: sortedUsers.map(user => user.userId) } });
+
+    sortedUsers.forEach(user => {
+      const foundUser = users.find(u => u._id.toString() === user.userId);
+      if (foundUser) {
+        user.name = foundUser.name;
+        user.email = foundUser.email;
+        user.mobile = foundUser.mobile;
+      }
+    });
+
+    return sortedUsers;
+  } catch (error) {
+    console.error("Error fetching top withdrawal users:", error);
+    res.status(500).send("Failed to fetch top withdrawal users");
+  }
+};
+
 const userDashboard = async (req, res) => {
   try {
     const id = req.params.id; // userId from URL or token
@@ -472,6 +528,10 @@ const userDashboard = async (req, res) => {
     // gifts list with valid date
     const gifts = await Gift.find({ status: "active", validity: { $gte: new Date() } });
     const orderAmount = totalOrderData.length > 0 ? totalOrderData[0].totalOrderAmount : 0;
+
+    const topWithdrawalUsers = await TopWithdrawalUsers();
+    // console.log(topWithdrawalUsers);
+    
     res.json({
       user: {
         id: user._id,
@@ -490,7 +550,8 @@ const userDashboard = async (req, res) => {
       orderPendingCount,
       orderCompletedCount,
       cartCount,
-      gifts
+      gifts,
+      topWithdrawalUsers
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

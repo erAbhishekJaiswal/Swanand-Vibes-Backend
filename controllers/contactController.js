@@ -38,8 +38,54 @@ const createContact = async (req, res) => {
  */
 const getContacts = async (req, res) => {
   try {
-    const contacts = await Contact.find().sort({ createdAt: -1 });
-    res.status(200).json(contacts);
+    
+    const { page = 1, limit = 8, search, status, priority } = req.query;
+    let query = {};
+    
+    // Search filter
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { subject: { $regex: search, $options: 'i' } },
+        { message: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // Status filter
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+    
+    // Priority filter
+    if (priority && priority !== 'all') {
+      query.priority = priority;
+    }
+    
+    const contacts = await Contact.find(query)
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .sort({ createdAt: -1 });
+    
+    const total = await Contact.countDocuments(query);
+    const totalContacts = await Contact.countDocuments();
+    const totalProgress = await Contact.countDocuments({ status: 'in-progress' });
+    const totalResolved = await Contact.countDocuments({ status: 'resolved' });
+    const totalNew = await Contact.countDocuments({ status: 'new' });
+    
+    res.json({
+      contacts,
+      total,
+      page: parseInt(page),
+      totalPages: Math.ceil(total / limit),
+      totalContacts,
+      totalProgress,
+      totalResolved,
+      totalNew
+
+    });
+    // const contacts = await Contact.find().sort({ createdAt: -1 });
+    // res.status(200).json(contacts);
   } catch (error) {
     res.status(500).json({ error: "Server error while fetching contacts", details: error.message });
   }

@@ -1,8 +1,8 @@
-const { get } = require('mongoose');
-const Product = require('../models/Product');
-const cloudinary = require('cloudinary').v2;
+const { get } = require("mongoose");
+const Product = require("../models/Product");
+const cloudinary = require("cloudinary").v2;
 const ExcelJS = require("exceljs");
-const Cart = require('../models/Cart')
+const Cart = require("../models/Cart");
 // const createProduct = async (req, res) => {
 //   try {
 //     const product = await Product.create(req.body);
@@ -17,7 +17,6 @@ const Cart = require('../models/Cart')
 //     });
 //   }
 // };
-
 
 // const createProduct = async (req, res) => {
 //   const { name, price, description, images, brand, category, countInStock, user } = req.body;
@@ -36,21 +35,20 @@ const Cart = require('../models/Cart')
 //   res.status(201).json(createdProduct);
 // };
 
-
 //18-9
 // const createProduct = async (req, res) => {
 //   try {
-//     const { 
-//       name, 
-//       price, 
-//       discountPrice, 
-//       description, 
-//       images, 
-//       brand, 
-//       category, 
-//       stock, 
+//     const {
+//       name,
+//       price,
+//       discountPrice,
+//       description,
+//       images,
+//       brand,
+//       category,
+//       stock,
 //       user,
-//       variants 
+//       variants
 //     } = req.body;
 
 //     if (!name || !price || !description || !brand || !category) {
@@ -167,26 +165,26 @@ const Cart = require('../models/Cart')
 //   }
 // };
 
-
 const createProduct = async (req, res) => {
   try {
-    const { 
-      name, 
-      description, 
-      images, 
-      brand, 
-      category, 
-      stock, 
+    const {
+      name,
+      description,
+      images,
+      brand,
+      category,
+      stock,
       user,
       variants,
-      tax 
+      tax,
     } = req.body;
 
     // ✅ Required field validation
     if (!name || !description || !brand || !category) {
       return res.status(400).json({
         success: false,
-        message: "Please provide all required fields: name, description, brand, category",
+        message:
+          "Please provide all required fields: name, description, brand, category",
       });
     }
 
@@ -197,7 +195,9 @@ const createProduct = async (req, res) => {
         if (!variant.size || !variant.price) {
           return res.status(400).json({
             success: false,
-            message: `Variant ${i + 1} is missing required fields: size and price`,
+            message: `Variant ${
+              i + 1
+            } is missing required fields: size and price`,
           });
         }
 
@@ -208,7 +208,9 @@ const createProduct = async (req, res) => {
             if (!image.public_id || !image.url) {
               return res.status(400).json({
                 success: false,
-                message: `Variant ${i + 1} image ${j + 1} is missing public_id or url`,
+                message: `Variant ${i + 1} image ${
+                  j + 1
+                } is missing public_id or url`,
               });
             }
           }
@@ -232,7 +234,10 @@ const createProduct = async (req, res) => {
     // ✅ Calculate overall stock (main stock = sum of variant stock, fallback to stock if provided)
     let overallStock = stock || 0;
     if (variants && variants.length > 0) {
-      overallStock = variants.reduce((total, variant) => total + (variant.stock || 0), 0);
+      overallStock = variants.reduce(
+        (total, variant) => total + (variant.stock || 0),
+        0
+      );
     }
 
     // ✅ Create product object
@@ -290,20 +295,19 @@ const createProduct = async (req, res) => {
   }
 };
 
-
 // const createProduct = async (req, res) => {
 //   try {
-//     const { 
-//       name, 
-//       price, 
-//       discountPrice, 
-//       description, 
-//       images, 
-//       brand, 
-//       category, 
-//       stock, 
+//     const {
+//       name,
+//       price,
+//       discountPrice,
+//       description,
+//       images,
+//       brand,
+//       category,
+//       stock,
 //       user,
-//       variants 
+//       variants
 //     } = req.body;
 
 //     // Validate required fields
@@ -324,7 +328,7 @@ const createProduct = async (req, res) => {
 //             message: `Variant ${i + 1} is missing required fields: size and price`
 //           });
 //         }
-        
+
 //         // Validate variant images structure if provided
 //         if (variant.images && Array.isArray(variant.images)) {
 //           for (let j = 0; j < variant.images.length; j++) {
@@ -380,7 +384,7 @@ const createProduct = async (req, res) => {
 
 //     const product = new Product(productData);
 //     const createdProduct = await product.save();
-    
+
 //     // Populate category and createdBy references
 //     await createdProduct.populate('category', 'name');
 //     await createdProduct.populate('createdBy', 'name email');
@@ -392,7 +396,7 @@ const createProduct = async (req, res) => {
 //     });
 //   } catch (error) {
 //     console.error('Error creating product:', error);
-    
+
 //     // Handle validation errors
 //     if (error.name === 'ValidationError') {
 //       const errors = Object.values(error.errors).map(err => err.message);
@@ -402,7 +406,7 @@ const createProduct = async (req, res) => {
 //         errors
 //       });
 //     }
-    
+
 //     // Handle duplicate key errors
 //     if (error.code === 11000) {
 //       return res.status(400).json({
@@ -410,7 +414,7 @@ const createProduct = async (req, res) => {
 //         message: 'Product with this name already exists'
 //       });
 //     }
-    
+
 //     res.status(500).json({
 //       success: false,
 //       message: 'Server error while creating product'
@@ -425,7 +429,7 @@ const createProduct = async (req, res) => {
 //       { $group: { _id: '$category', count: { $sum: 1 } } },
 //       { $project: { id: '$_id', name: 'name', count: 1, _id: 0 } }
 //     ]);
-    
+
 //     if (!categories || categories.length === 0) {
 //       return res.status(404).json({
 //         success: false,
@@ -470,8 +474,8 @@ const createProduct = async (req, res) => {
 //       data: {
 //         categories,
 //         brands,
-//         priceRange: priceRange.length > 0 ? 
-//           [priceRange[0].minPrice, priceRange[0].maxPrice] : 
+//         priceRange: priceRange.length > 0 ?
+//           [priceRange[0].minPrice, priceRange[0].maxPrice] :
 //           [0, 1000]
 //       }
 //     });
@@ -610,7 +614,6 @@ const getFilters = async (req, res) => {
 // //   query.category = category;
 // // }
 
-
 //     // Fetch filtered and paginated products
 //     const products = await Product.find(query).skip(skip).limit(limit);
 
@@ -632,7 +635,6 @@ const getFilters = async (req, res) => {
 //     });
 //   }
 // };
-
 
 //20-9-2025
 
@@ -688,16 +690,14 @@ const getFilters = async (req, res) => {
 //   });
 // };
 
-
-
 const getAllProducts = async (req, res) => {
   try {
     // Extract query parameters
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const search = req.query.search || '';
-    const category = req.query.category || '';
-    const showInactive = req.query.showInactive === 'true'; // Optional flag to show inactive products
+    const search = req.query.search || "";
+    const category = req.query.category || "";
+    const showInactive = req.query.showInactive === "true"; // Optional flag to show inactive products
 
     const skip = (page - 1) * limit;
 
@@ -706,7 +706,7 @@ const getAllProducts = async (req, res) => {
 
     // Search by product name (case-insensitive)
     if (search.trim()) {
-      query.name = { $regex: search.trim(), $options: 'i' };
+      query.name = { $regex: search.trim(), $options: "i" };
     }
 
     // Filter by category (only if valid ObjectId format)
@@ -721,8 +721,8 @@ const getAllProducts = async (req, res) => {
 
     // Fetch filtered and paginated products
     const products = await Product.find(query)
-      .populate('category') // Optional: populate category name
-      .populate('createdBy') // Optional: show who created the product
+      .populate("category") // Optional: populate category name
+      .populate("createdBy") // Optional: show who created the product
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 }); // newest first
@@ -738,16 +738,14 @@ const getAllProducts = async (req, res) => {
       totalItems: total,
       data: products,
     });
-
   } catch (error) {
-    console.error('Error in getAllProducts:', error);
+    console.error("Error in getAllProducts:", error);
     res.status(500).json({
       success: false,
-      error: error.message || 'Server Error',
+      error: error.message || "Server Error",
     });
   }
 };
-
 
 const getCommonProducts = async (req, res) => {
   try {
@@ -768,7 +766,16 @@ const getCommonProducts = async (req, res) => {
     const queryObj = { isActive: true }; // Only active products
 
     // Search by product name
-    if (search) queryObj.name = { $regex: search, $options: "i" };
+    // if (search) queryObj.name = { $regex: search, $options: "i" };
+    // 🔍 Multi-field search
+    if (search) {
+      queryObj.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { brand: { $regex: search, $options: "i" } },
+        { category: { $regex: search, $options: "i" } }, // if stored as string
+      ];
+    }
 
     // Filter by category
     if (category) queryObj.category = category;
@@ -872,9 +879,7 @@ const getCommonProducts = async (req, res) => {
 
         // Image
         images:
-          selectedVariant?.images?.[0]?.url ||
-          product.images?.[0]?.url ||
-          "",
+          selectedVariant?.images?.[0]?.url || product.images?.[0]?.url || "",
 
         // ✅ Important: return variant list too
         variants: product.variants.map((v) => ({
@@ -905,25 +910,23 @@ const getCommonProducts = async (req, res) => {
   }
 };
 
-
-
 // const getCommonProducts = async (req, res) => {
 //   const { page = 1, limit = 10, search = '', category = '', minPrice, maxPrice, brands, minRating, sort, size } = req.query;
 //   const skip = (page - 1) * limit;
 
 //   const queryObj = { isActive: true }; // Only fetch active products
-  
+
 //   // Search by product name
 //   if (search) queryObj.name = { $regex: search, $options: 'i' };
-  
+
 //   // Filter by category
 //   if (category) queryObj.category = category;
-  
+
 //   // Filter by brand
 //   if (brands) {
 //     queryObj.brand = { $in: brands.split(',') };
 //   }
-  
+
 //   // Filter by minimum rating
 //   if (minRating) queryObj.ratings = { $gte: Number(minRating) };
 
@@ -931,7 +934,7 @@ const getCommonProducts = async (req, res) => {
 //   const variantFilter = {};
 //   if (minPrice || maxPrice || size) {
 //     variantFilter['variants'] = { $elemMatch: {} };
-    
+
 //     if (minPrice) variantFilter['variants'].$elemMatch.price = { ...variantFilter['variants'].$elemMatch.price, $gte: Number(minPrice) };
 //     if (maxPrice) variantFilter['variants'].$elemMatch.price = { ...variantFilter['variants'].$elemMatch.price, $lte: Number(maxPrice) };
 //     if (size) variantFilter['variants'].$elemMatch.size = size;
@@ -948,14 +951,14 @@ const getCommonProducts = async (req, res) => {
 //   // Handle sorting
 //   if (sort) {
 //     const sortBy = sort.split(',').join(' ');
-    
+
 //     // Special handling for price sorting since we need to consider variant prices
 //     if (sort.includes('price')) {
 //       // For price sorting, we need a more complex approach
 //       // This is a simplified version - you might need to adjust based on your needs
-//       mongooseQuery = mongooseQuery.sort({ 
+//       mongooseQuery = mongooseQuery.sort({
 //         // Sort by the minimum variant price
-//         'variants.price': sort.includes('-') ? -1 : 1 
+//         'variants.price': sort.includes('-') ? -1 : 1
 //       });
 //     } else {
 //       mongooseQuery = mongooseQuery.sort(sortBy);
@@ -978,7 +981,7 @@ const getCommonProducts = async (req, res) => {
 //   const productlist = products.map(product => {
 //     // Find the variant that matches the filters (if any)
 //     let selectedVariant = product.variants[0]; // Default to first variant
-    
+
 //     if (minPrice || maxPrice || size) {
 //       // If there are variant filters, find the matching variant
 //       const matchingVariants = product.variants.filter(variant => {
@@ -988,15 +991,15 @@ const getCommonProducts = async (req, res) => {
 //         if (size) matches = matches && variant.size === size;
 //         return matches;
 //       });
-      
+
 //       if (matchingVariants.length > 0) {
 //         selectedVariant = matchingVariants[0];
 //       }
 //     }
-    
+
 //     // Get the lowest price from all variants for display purposes
 //     const minVariantPrice = Math.min(...product.variants.map(v => v.price));
-    
+
 //     return {
 //       id: product._id,
 //       name: product.name,
@@ -1020,7 +1023,7 @@ const getCommonProducts = async (req, res) => {
 //     totalItems: total,
 //     data: productlist
 //   });
-// }; 
+// };
 
 const exportStockReport = async (req, res) => {
   try {
@@ -1035,12 +1038,12 @@ const exportStockReport = async (req, res) => {
       });
     }
 
-//     products.forEach((product) => {
-//   // If category is still a string, fallback
-//   if (typeof product.category === "string") {
-//     product.category = { name: product.category };
-//   }
-// });
+    //     products.forEach((product) => {
+    //   // If category is still a string, fallback
+    //   if (typeof product.category === "string") {
+    //     product.category = { name: product.category };
+    //   }
+    // });
 
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Stock Report");
@@ -1121,7 +1124,6 @@ const exportStockReport = async (req, res) => {
   }
 };
 
-
 // const getCommonProducts = async (req, res) => {
 //   try {
 //     // Extract query parameters
@@ -1181,8 +1183,6 @@ const exportStockReport = async (req, res) => {
 // };
 
 // In your products route file (e.g., routes/products.js)
-
-
 
 // get all products for admin
 // const getAllProducts = async (req, res) => {
@@ -1266,7 +1266,6 @@ const exportStockReport = async (req, res) => {
 //   }
 // };
 
-
 const getCommonProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
@@ -1289,23 +1288,23 @@ const getCommonProductById = async (req, res) => {
       description: product.description,
       tax: product.tax,
       stock: product.stock,
-      images: product.images.map(img => ({
+      images: product.images.map((img) => ({
         public_id: img.public_id,
         url: img.url,
       })),
       rating: product.ratings,
       numOfReviews: product.numOfReviews,
-      variants: product.variants.map(v => ({
+      variants: product.variants.map((v) => ({
         id: v._id, // expose variant id
         size: v.size,
         price: v.price,
         stock: v.stock,
-        images: v.images.map(img => ({
+        images: v.images.map((img) => ({
           public_id: img.public_id,
           url: img.url,
         })),
       })),
-      reviews: product.reviews.map(r => ({
+      reviews: product.reviews.map((r) => ({
         user: r.user,
         name: r.name,
         rating: r.rating,
@@ -1328,7 +1327,6 @@ const getCommonProductById = async (req, res) => {
     });
   }
 };
-
 
 // common get product by id for all
 // const getCommonProductById = async (req, res) => {
@@ -1365,11 +1363,14 @@ const getCommonProductById = async (req, res) => {
 // Get a single product by ID for Admin
 const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate('category', 'name');
+    const product = await Product.findById(req.params.id).populate(
+      "category",
+      "name"
+    );
     if (!product) {
       return res.status(404).json({
         success: false,
-        error: 'Product not found',
+        error: "Product not found",
       });
     }
     res.status(200).json({
@@ -1390,7 +1391,12 @@ const generateUploadSignature = async (req, res) => {
     { timestamp },
     process.env.CLOUDINARY_API_SECRET
   );
-  res.json({ timestamp, signature, cloudName: process.env.CLOUDINARY_CLOUD_NAME, apiKey: process.env.CLOUDINARY_API_KEY });
+  res.json({
+    timestamp,
+    signature,
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    apiKey: process.env.CLOUDINARY_API_KEY,
+  });
 };
 
 const updateProduct = async (req, res) => {
@@ -1402,7 +1408,7 @@ const updateProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({
         success: false,
-        error: 'Product not found',
+        error: "Product not found",
       });
     }
     res.status(200).json({
@@ -1417,7 +1423,6 @@ const updateProduct = async (req, res) => {
   }
 };
 
-
 const deleteProduct = async (req, res) => {
   try {
     const productId = req.params.id;
@@ -1425,13 +1430,13 @@ const deleteProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({
         success: false,
-        error: 'Product not found',
+        error: "Product not found",
       });
     }
     await Cart.updateMany(
-  { "items.product": productId },
-  { $pull: { items: { product: productId } } }
-);
+      { "items.product": productId },
+      { $pull: { items: { product: productId } } }
+    );
     res.status(200).json({
       success: true,
       data: {},
@@ -1450,16 +1455,16 @@ const searchProducts = async (req, res) => {
   try {
     const products = await Product.find({
       $or: [
-        { name: { $regex: req.params.query, $options: 'i' } },
-        { category: { $regex: req.params.query, $options: 'i' } },
-        { brand: { $regex: req.params.query, $options: 'i' } },
+        { name: { $regex: req.params.query, $options: "i" } },
+        { category: { $regex: req.params.query, $options: "i" } },
+        { brand: { $regex: req.params.query, $options: "i" } },
       ],
     });
 
     if (!products) {
       return res.status(404).json({
         success: false,
-        error: 'No products found',
+        error: "No products found",
       });
     }
 
@@ -1470,9 +1475,8 @@ const searchProducts = async (req, res) => {
       category: product.category,
       price: product.price,
       description: product.description,
-      images: product.images[0].url
-    }))
-
+      images: product.images[0].url,
+    }));
 
     res.status(200).json({
       success: true,
@@ -1486,16 +1490,16 @@ const searchProducts = async (req, res) => {
   }
 };
 
-module.exports ={
-    createProduct,
-    getAllProducts,
-    getProductById,
-    updateProduct,
-    deleteProduct,
-    generateUploadSignature,
-    getCommonProducts,
-    getCommonProductById,
-    getFilters,
-    exportStockReport
-    // searchProducts
-}
+module.exports = {
+  createProduct,
+  getAllProducts,
+  getProductById,
+  updateProduct,
+  deleteProduct,
+  generateUploadSignature,
+  getCommonProducts,
+  getCommonProductById,
+  getFilters,
+  exportStockReport,
+  // searchProducts
+};

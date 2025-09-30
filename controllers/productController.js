@@ -767,15 +767,22 @@ const getCommonProducts = async (req, res) => {
 
     // Search by product name
     // if (search) queryObj.name = { $regex: search, $options: "i" };
-    // 🔍 Multi-field search
+    // if (search && search.trim() !== "") {
+    //   // search to make case-insensitive
+    //   const searchRegex = new RegExp(search.trim(), "i");
+    //   queryObj.name = { $regex: searchRegex };
+    //   // queryObj.name = { $regex: search, $options: "i" };
+    //   // queryObj.name = { $regex: search, $options: "i" };
+    // }
+
     if (search) {
-      queryObj.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-        { brand: { $regex: search, $options: "i" } },
-        { category: { $regex: search, $options: "i" } }, // if stored as string
-      ];
-    }
+  queryObj.$or = [
+    { name: { $regex: search, $options: "i" } },
+    { description: { $regex: search, $options: "i" } },
+    { brand: { $regex: search, $options: "i" } },
+  ];
+}
+
 
     // Filter by category
     if (category) queryObj.category = category;

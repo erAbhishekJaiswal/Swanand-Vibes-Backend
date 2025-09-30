@@ -151,7 +151,7 @@ exports.registerUser = async (req, res) => {
   try {
     const { name, email, otpValue, password, referralCode } = req.body;
 
-    // console.log({ name, email, otp, password, referralCode, body: req.body });
+    // // console.log({ name, email, otp, password, referralCode, body: req.body });
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
@@ -471,7 +471,7 @@ exports.otpVerify = async (req, res) => {
 
   res.json({ message: "OTP Verified successfully" , resetToken, useremail });
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -498,7 +498,7 @@ exports.resetPassword = async (req, res) => {
 
   res.json({ message: "Password reset successfully" });
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     res.status(500).json({ message: "Server error" });
   }
 

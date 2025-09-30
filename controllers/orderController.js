@@ -5,7 +5,7 @@ const Product = require('../models/Product');
 // const createOrder = async (req, res) => {
 //   try {
 //     const userId = req.params.userId;
-//     // console.log("Creating order for user:", userId);
+//     // // console.log("Creating order for user:", userId);
 
 //     const { cartItems, itemsPrice, shippingPrice, taxPrice, totalPrice, address, apartment, city, country, email, mobile, shippingMethod, state, zipCode,paymentStatus,paidAt } = req.body;
    
@@ -31,7 +31,7 @@ const Product = require('../models/Product');
 //     });
 //     // remove items from cart
 //     const cart = await Cart.findOne({ user: userId });
-//     // console.log(cart);
+//     // // console.log(cart);
 //     if (cart) {
 //           // Remove item from cart
 //       cart.items = cart.items.filter(item => !cartItems.some(orderItem => orderItem.product === item.product));
@@ -630,7 +630,7 @@ const getAllOrders = async (req, res) => {
 const getUserOrders = async (req, res) => {
     try {
         const userId = req.params.userId;
-        // console.log(`Fetching orders for user ${userId}`);
+        // // console.log(`Fetching orders for user ${userId}`);
 
         const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
         res.status(200).json({

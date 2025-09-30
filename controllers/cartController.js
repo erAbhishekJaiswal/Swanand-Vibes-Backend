@@ -735,7 +735,7 @@ const addToCart = async (req, res) => {
 const removeFromCart = async (req, res) => {
   try {
     const { userId, itemId } = req.body;
-    console.log(userId, itemId);
+    // console.log(userId, itemId);
     
 
     if (!userId || !itemId) {

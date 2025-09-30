@@ -178,7 +178,7 @@ const getAllUsers = async (req, res) => {
       ];
     }
 
-    // console.log("Final Query:", query); // 🔍 debug
+    // // console.log("Final Query:", query); // 🔍 debug
 
     // Fetch users
     const users = await User.find(query)
@@ -253,7 +253,7 @@ const deleteUser = async (req, res) => {
 const updateUserAddress = async (req, res) => {
   try {
     // const { address } = req.body;
-    // console.log(req.body);
+    // // console.log(req.body);
     
     const user = await User.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -420,7 +420,7 @@ const TopWithdrawalUsers = async (req, res) => {
     const wallets = await Wallet.find({})
       .populate("user", "name email mobile");
 
-    // console.log(`Total wallets: ${wallets}`);
+    // // console.log(`Total wallets: ${wallets}`);
 
     const withdrawalRequests = wallets.flatMap(wallet =>
       wallet.transactions
@@ -530,7 +530,7 @@ const userDashboard = async (req, res) => {
     const orderAmount = totalOrderData.length > 0 ? totalOrderData[0].totalOrderAmount : 0;
 
     const topWithdrawalUsers = await TopWithdrawalUsers();
-    // console.log(topWithdrawalUsers);
+    // // console.log(topWithdrawalUsers);
     
     res.json({
       user: {

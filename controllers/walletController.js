@@ -407,7 +407,7 @@ exports.requestWithdrawal = async (req, res) => {
   await wallet.save();
   res.json({ message: "Withdrawal request submitted" });
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 
 };
@@ -437,7 +437,7 @@ exports.approveWithdrawal = async (req, res) => {
   await wallet.save();
   res.json({ message: "Withdrawal approved successfully" });
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 
 };
@@ -458,7 +458,7 @@ exports.deleteWithdrawalRequest = async (req, res) => {
   await wallet.save();
   res.json({ message: "Withdrawal request deleted successfully" });
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 
 };
@@ -470,7 +470,7 @@ exports.deleteWithdrawalRequest = async (req, res) => {
 //   try {
 //     const { start, end } = req.query;
 
-//     console.log(start, end);
+//     // console.log(start, end);
     
 //     // Convert start & end to Date objects
 //     const startDate = start ? new Date(start) : new Date("1970-01-01");
@@ -562,7 +562,7 @@ exports.generateWithdrawalReport = async (req, res) => {
         },
       },
     }).populate("user", "name email mobile");
-    console.log(wallets);
+    // console.log(wallets);
     
 
     const workbook = new ExcelJS.Workbook();
@@ -771,7 +771,7 @@ exports.getTopLargeAmountWithdrawalUsers = async (req, res) => {
     const wallets = await Wallet.find({})
       .populate("user", "name email mobile");
 
-    // console.log(`Total wallets: ${wallets}`);
+    // // console.log(`Total wallets: ${wallets}`);
 
     const withdrawalRequests = wallets.flatMap(wallet =>
       wallet.transactions

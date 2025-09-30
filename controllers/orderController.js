@@ -632,7 +632,7 @@ const getUserOrders = async (req, res) => {
         const userId = req.params.userId;
         // console.log(`Fetching orders for user ${userId}`);
 
-        const orders = await Order.find({ user: userId });
+        const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
         res.status(200).json({
             success: true,
             data: orders,

@@ -284,7 +284,7 @@ exports.getWithdrawalRequests = async (req, res) => {
           walletId: wallet._id,
           user: wallet.user,
           balance: wallet.balance,
-          transaction: {
+          transactions: {
             _id: tx._id,
             type: tx.type,
             amount: tx.amount,

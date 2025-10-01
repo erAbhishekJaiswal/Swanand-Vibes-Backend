@@ -8,7 +8,8 @@ const {
   deleteWithdrawalRequest,
   generateWithdrawalReport,
   approveWithdrawal,
-  getTopLargeAmountWithdrawalUsers
+  getTopLargeAmountWithdrawalUsers,
+  completeWithdrawal
 } = require("../controllers/walletController");
 // const authMiddleware = require("../middleware/authMiddleware");
 
@@ -69,5 +70,10 @@ router.put(
   // authMiddleware,
   deleteWithdrawalRequest
 )
+router.put(
+  '/:id/complete-withdrawal',
+  // authMiddleware,
+  completeWithdrawal
+);
 
 module.exports = router;

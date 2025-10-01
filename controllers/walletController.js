@@ -8,9 +8,11 @@ const ExcelJS = require("exceljs");
 // Get wallet of a user
 exports.getWallet = async (req, res) => {
   try {
-    const userId = req.params.id
-    const wallet = await Wallet.findOne({ user: userId })
-    .populate("transactions.fromUser", "name email");
+    const userId = req.params.id;
+    const wallet = await Wallet.findOne({ user: userId }).populate(
+      "transactions.fromUser",
+      "name email"
+    );
     if (!wallet) {
       return res.status(404).json({ message: "Wallet not found" });
     }
@@ -42,7 +44,6 @@ exports.creditWallet = async (userId, amount, level, fromUserId) => {
     console.error("Wallet credit error:", error);
   }
 };
-
 
 // **********************************Running code**********************************
 // // generate the request for withdrawal
@@ -76,7 +77,6 @@ exports.creditWallet = async (userId, amount, level, fromUserId) => {
 //     res.status(500).json({ message: "Server error", error });
 //   }
 // };
-
 
 // // generate the aprove the request for withdrawal
 // exports.approveWithdrawal = async (req, res) => {
@@ -116,36 +116,39 @@ exports.creditWallet = async (userId, amount, level, fromUserId) => {
 //   }
 // };
 
-
 exports.allwalletList = async (req, res) => {
   try {
     // Fetch all wallets with user details
-    const wallets = await Wallet.find()
-      .populate("user", "name email");
+    const wallets = await Wallet.find().populate("user", "name email");
 
     if (!wallets || wallets.length === 0) {
       return res.status(404).json({ message: "No wallets found", wallets: [] });
     }
 
     // Collect all transactions
-    const allTransactions = wallets.flatMap(wallet => wallet.transactions);
+    const allTransactions = wallets.flatMap((wallet) => wallet.transactions);
 
     // Count withdrawal status totals
     const counts = {
-      withdrawalRequested: allTransactions.filter(tx => tx.status === "withdrawal-requested").length,
-      withdrawalApproved: allTransactions.filter(tx => tx.status === "withdrawal-approved").length,
-      withdrawalRejected: allTransactions.filter(tx => tx.status === "withdrawal-rejected").length,
+      withdrawalRequested: allTransactions.filter(
+        (tx) => tx.status === "withdrawal-requested"
+      ).length,
+      withdrawalApproved: allTransactions.filter(
+        (tx) => tx.status === "withdrawal-approved"
+      ).length,
+      withdrawalRejected: allTransactions.filter(
+        (tx) => tx.status === "withdrawal-rejected"
+      ).length,
     };
 
     res.json({
       counts,
-      wallets
+      wallets,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
 };
-
 
 // exports.allwalletList = async (req, res) => {
 //   try {
@@ -156,16 +159,7 @@ exports.allwalletList = async (req, res) => {
 //   }
 // }
 
-
-
-
-
 // *************************************************
-
-
-
-
-
 
 // Debit (withdrawal)
 // exports.debitWallet = async (req, res) => {
@@ -190,13 +184,6 @@ exports.allwalletList = async (req, res) => {
 //   }
 // };
 
-
-
-
-
-
-
-
 // exports.getWithdrawalRequests = async (req, res) => {
 //   try {
 //     const users = await Wallet.find({ "transactions.status": "withdrawal-requested" })
@@ -217,32 +204,23 @@ exports.allwalletList = async (req, res) => {
 //   }
 // };
 
-
 // All Wallet
-
-
-
-
-
 
 // exports.getWithdrawalRequests = async (req, res) => {
 //   try {
 //     // Find users who have at least one transaction with 'withdrawal-requested'  status
-    
+
 //     const users = await Wallet.find({ "transactions.status": "withdrawal-requested" }).populate("user", "name email");
 
 //     if (!users || users.length === 0) {
 //       return res.status(404).json({ message: "No withdrawal requests found", users });
 //     }
 
-    
-    
 //     // Filter and include only the withdrawal-requested transactions
 //     const filteredUsers = users.map((user) => {
 //       const withdrawalTransactions = user.transactions.filter(
 //         (tx) => tx.status === "withdrawal-requested"
 //       );
-    
 
 //       return {
 //         _id: user._id,
@@ -258,29 +236,42 @@ exports.allwalletList = async (req, res) => {
 //   }
 // };
 
-
 exports.getWithdrawalRequests = async (req, res) => {
   try {
     // Find wallets that contain withdrawal-related transactions
     const wallets = await Wallet.find({
       "transactions.status": {
-        $in: ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"]
-      }
+        $in: [
+          "withdrawal-requested",
+          "withdrawal-approved",
+          "withdrawal-rejected",
+        ],
+      },
     }).populate("user", "name email");
 
     if (!wallets || wallets.length === 0) {
       return res.status(404).json({
         message: "No withdrawal requests found",
-        counts: { withdrawalRequested: 0, withdrawalApproved: 0, withdrawalRejected: 0 },
-        withdrawalRequests: []
+        counts: {
+          withdrawalRequested: 0,
+          withdrawalApproved: 0,
+          withdrawalRejected: 0,
+        },
+        withdrawalRequests: [],
       });
     }
 
     // Flatten all withdrawal transactions from all wallets
-    const withdrawalRequests = wallets.flatMap(wallet => {
+    const withdrawalRequests = wallets.flatMap((wallet) => {
       return wallet.transactions
-        .filter(tx => ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"].includes(tx.status))
-        .map(tx => ({
+        .filter((tx) =>
+          [
+            "withdrawal-requested",
+            "withdrawal-approved",
+            "withdrawal-rejected",
+          ].includes(tx.status)
+        )
+        .map((tx) => ({
           walletId: wallet._id,
           user: wallet.user,
           balance: wallet.balance,
@@ -291,45 +282,49 @@ exports.getWithdrawalRequests = async (req, res) => {
             status: tx.status,
             date: tx.date,
             balanceAfter: tx.balanceAfter,
-            fromUser: tx.fromUser
-          }
+            fromUser: tx.fromUser,
+          },
         }));
     });
 
     // Count totals
-    const allTransactions = wallets.flatMap(w => w.transactions);
+    const allTransactions = wallets.flatMap((w) => w.transactions);
     const counts = {
-      withdrawalRequested: allTransactions.filter(tx => tx.status === "withdrawal-requested").length,
-      withdrawalApproved: allTransactions.filter(tx => tx.status === "withdrawal-approved").length,
-      withdrawalRejected: allTransactions.filter(tx => tx.status === "withdrawal-rejected").length,
+      withdrawalRequested: allTransactions.filter(
+        (tx) => tx.status === "withdrawal-requested"
+      ).length,
+      withdrawalApproved: allTransactions.filter(
+        (tx) => tx.status === "withdrawal-approved"
+      ).length,
+      withdrawalRejected: allTransactions.filter(
+        (tx) => tx.status === "withdrawal-rejected"
+      ).length,
     };
 
     res.json({
       counts,
-      withdrawalRequests
+      withdrawalRequests,
     });
-
   } catch (error) {
     console.error("Error fetching withdrawal requests:", error);
     res.status(500).json({ message: "Server error", error });
   }
 };
 
-
 // exports.getWithdrawalRequests = async (req, res) => {
 //   try {
 //     // Find wallets that contain withdrawal-related transactions
 //     const wallets = await Wallet.find({
-//       "transactions.status": { 
-//         $in: ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"] 
+//       "transactions.status": {
+//         $in: ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"]
 //       }
 //     }).populate("user", "name email");
 
 //     if (!wallets || wallets.length === 0) {
-//       return res.status(404).json({ 
-//         message: "No withdrawal requests found", 
+//       return res.status(404).json({
+//         message: "No withdrawal requests found",
 //         counts: { withdrawalRequested: 0, withdrawalApproved: 0, withdrawalRejected: 0 },
-//         withdrawalRequests: [] 
+//         withdrawalRequests: []
 //       });
 //     }
 
@@ -380,8 +375,6 @@ exports.getWithdrawalRequests = async (req, res) => {
 //     res.status(500).json({ message: "Server error", error });
 //   }
 // };
-
-
 
 // exports.getWithdrawalRequests = async (req, res) => {
 //   try {
@@ -439,95 +432,110 @@ exports.getWithdrawalRequests = async (req, res) => {
 //   }
 // };
 
-
-
-
-
 // Request withdrawal (user action)
 exports.requestWithdrawal = async (req, res) => {
   try {
-      const { amount } = req.body;
-      const userId = req.params.id;
-  const wallet = await Wallet.findOne({ user: userId });
+    const { amount } = req.body;
+    const userId = req.params.id;
+    const wallet = await Wallet.findOne({ user: userId });
 
-  if (!wallet || wallet.balance < amount) {
-    return res.status(400).json({ message: "Insufficient balance" });
-  }
-  // if user have already requested for withdrawal and not yet approved/rejected then not to do new request till that is approved/rejected
-  const existingRequest = wallet.transactions.find(
-    tx => tx.status === "withdrawal-requested"
-  );
-  if (existingRequest) {
-    return res.status(400).json({ message: "Withdrawal request already submitted" });
-  }
+    if (!wallet || wallet.balance < amount) {
+      return res.status(400).json({ message: "Insufficient balance" });
+    }
+    // if user have already requested for withdrawal and not yet approved/rejected then not to do new request till that is approved/rejected
+    const existingRequest = wallet.transactions.find(
+      (tx) => tx.status === "withdrawal-requested"
+    );
+    if (existingRequest) {
+      return res
+        .status(400)
+        .json({ message: "Withdrawal request already submitted" });
+    }
 
-  wallet.transactions.push({
-    type: "debit",
-    amount,
-    status: "withdrawal-requested",
-    balanceAfter: wallet.balance, // not deducted yet
-  });
+    wallet.transactions.push({
+      type: "debit",
+      amount,
+      status: "withdrawal-requested",
+      balanceAfter: wallet.balance, // not deducted yet
+    });
 
-  await wallet.save();
-  res.json({ message: "Withdrawal request submitted" });
+    await wallet.save();
+    res.json({ message: "Withdrawal request submitted" });
   } catch (error) {
     console.error(error);
   }
-
 };
 
 // Approve withdrawal (admin action)
 exports.approveWithdrawal = async (req, res) => {
   try {
-      const { walletId, txnId } = req.body;
-  const wallet = await Wallet.findById(walletId);
-  if (!wallet) return res.status(404).json({ message: "Wallet not found" });
+    const { walletId, txnId } = req.body;
+    const wallet = await Wallet.findById(walletId);
+    if (!wallet) return res.status(404).json({ message: "Wallet not found" });
 
-  const txn = wallet.transactions.id(txnId);
-  if (!txn || txn.status !== "withdrawal-requested") {
-    return res.status(400).json({ message: "Invalid transaction" });
-  }
+    const txn = wallet.transactions.id(txnId);
+    if (!txn || txn.status !== "withdrawal-requested") {
+      return res.status(400).json({ message: "Invalid transaction" });
+    }
 
-  if (wallet.balance < txn.amount) {
-    txn.status = "withdrawal-rejected";
+    if (wallet.balance < txn.amount) {
+      txn.status = "withdrawal-rejected";
+      await wallet.save();
+      return res
+        .status(400)
+        .json({ message: "Insufficient balance at approval" });
+    }
+
+    wallet.balance -= txn.amount;
+    txn.status = "withdrawal-approved";
+    txn.balanceAfter = wallet.balance;
+
     await wallet.save();
-    return res.status(400).json({ message: "Insufficient balance at approval" });
-  }
-
-  wallet.balance -= txn.amount;
-  txn.status = "withdrawal-approved";
-  txn.balanceAfter = wallet.balance;
-
-  await wallet.save();
-  res.json({ message: "Withdrawal approved successfully" });
+    res.json({ message: "Withdrawal approved successfully" });
   } catch (error) {
     console.error(error);
   }
-
 };
 
 // delete the withdraw request
 exports.deleteWithdrawalRequest = async (req, res) => {
   try {
-      const { walletId, txnId } = req.body;
-  const wallet = await Wallet.findById(walletId);
-  if (!wallet) return res.status(404).json({ message: "Wallet not found" });
+    const { walletId, txnId } = req.body;
+    const wallet = await Wallet.findById(walletId);
+    if (!wallet) return res.status(404).json({ message: "Wallet not found" });
 
-  const txn = wallet.transactions.id(txnId);
-  if (!txn || txn.status !== "withdrawal-requested") {
-    return res.status(400).json({ message: "Invalid transaction" });
-  }
+    const txn = wallet.transactions.id(txnId);
+    if (!txn || txn.status !== "withdrawal-requested") {
+      return res.status(400).json({ message: "Invalid transaction" });
+    }
 
-  txn.status = "withdrawal-rejected";
-  await wallet.save();
-  res.json({ message: "Withdrawal request deleted successfully" });
+    txn.status = "withdrawal-rejected";
+    await wallet.save();
+    res.json({ message: "Withdrawal request deleted successfully" });
   } catch (error) {
     console.error(error);
   }
-
 };
 
+// change the status to completed after the money is sent to user
+exports.completeWithdrawal = async (req, res) => {
+  try {
+    const { walletId, txnId } = req.body;
+    const wallet = await Wallet.findById(walletId);
+    if (!wallet) return res.status(404).json({ message: "Wallet not found" });
 
+    const txn = wallet.transactions.id(txnId);
+    if (!txn || txn.status !== "withdrawal-approved") {
+      return res.status(400).json({ message: "Invalid transaction" });
+    }
+    txn.status = "completed";
+
+    await wallet.save();
+    res.json({ message: "Withdrawal completed successfully" });
+  } catch (error) {
+    console.error(error);
+  }
+};
 
 // GET /api/reports/withdrawals?start=2025-09-01&end=2025-09-11
 // exports.generateWithdrawalReport = async (req, res) => {
@@ -535,7 +543,7 @@ exports.deleteWithdrawalRequest = async (req, res) => {
 //     const { start, end } = req.query;
 
 //     // console.log(start, end);
-    
+
 //     // Convert start & end to Date objects
 //     const startDate = start ? new Date(start) : new Date("1970-01-01");
 //     const endDate = end ? new Date(end) : new Date();
@@ -609,7 +617,6 @@ exports.deleteWithdrawalRequest = async (req, res) => {
 //   }
 // };
 
-
 exports.generateWithdrawalReport = async (req, res) => {
   try {
     const { start, end } = req.query;
@@ -619,15 +626,20 @@ exports.generateWithdrawalReport = async (req, res) => {
 
     // Fetch wallets with withdrawal transactions in range
     const wallets = await Wallet.find({
-      "transactions": {
+      transactions: {
         $elemMatch: {
-          status: { $in: ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"] },
+          status: {
+            $in: [
+              "withdrawal-requested",
+              "withdrawal-approved",
+              "withdrawal-rejected",
+            ],
+          },
           date: { $gte: startDate, $lte: endDate },
         },
       },
     }).populate("user", "name email mobile");
     // console.log(wallets);
-    
 
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Withdrawal Requests");
@@ -651,9 +663,11 @@ exports.generateWithdrawalReport = async (req, res) => {
       wallet.transactions
         .filter(
           (txn) =>
-            ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"].includes(
-              txn.status?.toLowerCase()
-            ) &&
+            [
+              "withdrawal-requested",
+              "withdrawal-approved",
+              "withdrawal-rejected",
+            ].includes(txn.status?.toLowerCase()) &&
             txn.date >= startDate &&
             txn.date <= endDate
         )
@@ -693,7 +707,6 @@ exports.generateWithdrawalReport = async (req, res) => {
   }
 };
 
-
 // get top large amount withdrawal users
 // exports.getTopLargeAmountWithdrawalUsers = async (req, res) => {
 //   try {
@@ -721,7 +734,7 @@ exports.generateWithdrawalReport = async (req, res) => {
 //   },
 // }).populate("user", "name email mobile")
 //   .populate("transactions.fromUser", "_id"); // 👈 this line
-  
+
 //     const withdrawalRequests = wallets.flatMap((wallet) =>
 //       wallet.transactions.filter(
 //         (txn) =>
@@ -748,7 +761,6 @@ exports.generateWithdrawalReport = async (req, res) => {
 //   return acc;
 // }, {});
 
-
 //     // Sort users by withdrawal amount in descending order
 //     const sortedUsers = Object.entries(withdrawalAmounts)
 //       .map(([userId, amount]) => ({ userId, amount }))
@@ -760,11 +772,6 @@ exports.generateWithdrawalReport = async (req, res) => {
 //     res.status(500).send("Failed to fetch top withdrawal users");
 //   }
 // };
-
-
-
-
-
 
 // Get users with the largest withdrawal amounts in a date range
 // exports.getTopLargeAmountWithdrawalUsers = async (req, res) => {
@@ -778,8 +785,8 @@ exports.generateWithdrawalReport = async (req, res) => {
 //     const wallets = await Wallet.find({
 //       transactions: {
 //         $elemMatch: {
-//           status: { 
-//             $in: ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"] 
+//           status: {
+//             $in: ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"]
 //           },
 //           date: { $gte: startDate, $lte: endDate },
 //         },
@@ -823,8 +830,6 @@ exports.generateWithdrawalReport = async (req, res) => {
 //   }
 // };
 
-
-
 exports.getTopLargeAmountWithdrawalUsers = async (req, res) => {
   try {
     const { start, end } = req.query;
@@ -832,39 +837,48 @@ exports.getTopLargeAmountWithdrawalUsers = async (req, res) => {
     const startDate = start ? new Date(start) : new Date("1970-01-01");
     const endDate = end ? new Date(end) : new Date();
 
-    const wallets = await Wallet.find({})
-      .populate("user", "name email mobile");
+    const wallets = await Wallet.find({}).populate("user", "name email mobile");
 
     // // console.log(`Total wallets: ${wallets}`);
 
-    const withdrawalRequests = wallets.flatMap(wallet =>
+    const withdrawalRequests = wallets.flatMap((wallet) =>
       wallet.transactions
-        .filter(txn =>
-          ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"].includes(txn.status?.toLowerCase()) &&
-          txn.date >= startDate &&
-          txn.date <= endDate &&
-          wallet.user
+        .filter(
+          (txn) =>
+            [
+              "withdrawal-requested",
+              "withdrawal-approved",
+              "withdrawal-rejected",
+            ].includes(txn.status?.toLowerCase()) &&
+            txn.date >= startDate &&
+            txn.date <= endDate &&
+            wallet.user
         )
-        .map(txn => ({
+        .map((txn) => ({
           userId: wallet.user._id.toString(),
           amount: txn.amount,
         }))
     );
 
-    const withdrawalTotals = withdrawalRequests.reduce((acc, { userId, amount }) => {
-      acc[userId] = (acc[userId] || 0) + amount;
-      return acc;
-    }, {});
+    const withdrawalTotals = withdrawalRequests.reduce(
+      (acc, { userId, amount }) => {
+        acc[userId] = (acc[userId] || 0) + amount;
+        return acc;
+      },
+      {}
+    );
 
     const sortedUsers = Object.entries(withdrawalTotals)
       .map(([userId, amount]) => ({ userId, amount }))
       .sort((a, b) => b.amount - a.amount);
 
     // user details
-    const users = await User.find({ _id: { $in: sortedUsers.map(user => user.userId) } });
+    const users = await User.find({
+      _id: { $in: sortedUsers.map((user) => user.userId) },
+    });
 
-    sortedUsers.forEach(user => {
-      const foundUser = users.find(u => u._id.toString() === user.userId);
+    sortedUsers.forEach((user) => {
+      const foundUser = users.find((u) => u._id.toString() === user.userId);
       if (foundUser) {
         user.name = foundUser.name;
         user.email = foundUser.email;
@@ -878,4 +892,3 @@ exports.getTopLargeAmountWithdrawalUsers = async (req, res) => {
     res.status(500).send("Failed to fetch top withdrawal users");
   }
 };
-

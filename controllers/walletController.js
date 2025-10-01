@@ -729,7 +729,6 @@ exports.generateWithdrawalReport = async (req, res) => {
     const startDate = start ? new Date(start) : new Date("1970-01-01");
     const endDate = end ? new Date(end) : new Date();
 
-    // Fetch wallets with withdrawal transactions in range
     const wallets = await Wallet.find({
       transactions: {
         $elemMatch: {
@@ -745,18 +744,17 @@ exports.generateWithdrawalReport = async (req, res) => {
       },
     }).populate("user", "name email mobile");
 
-    // Fetch all KYC data and map by userId for fast lookup
     const kycRecords = await Kyc.find().populate("userId", "name email mobile");
     const kycMap = {};
     kycRecords.forEach((kyc) => {
-      kycMap[kyc.userId._id.toString()] = kyc;
+      if (kyc.userId?._id) {
+        kycMap[kyc.userId._id.toString()] = kyc;
+      }
     });
 
-    // Create Excel workbook
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Withdrawal Requests");
 
-    // Headers
     sheet.columns = [
       { header: "User Name", key: "name", width: 20 },
       { header: "Email", key: "email", width: 25 },
@@ -766,8 +764,6 @@ exports.generateWithdrawalReport = async (req, res) => {
       { header: "Transaction Type", key: "type", width: 15 },
       { header: "Status", key: "status", width: 20 },
       { header: "Date", key: "date", width: 20 },
-
-      // KYC fields
       { header: "Aadhar Number", key: "adharNumber", width: 20 },
       { header: "Aadhar Name", key: "adharName", width: 20 },
       { header: "PAN Number", key: "panNumber", width: 20 },
@@ -777,45 +773,44 @@ exports.generateWithdrawalReport = async (req, res) => {
       { header: "KYC Status", key: "kycStatus", width: 15 },
     ];
 
-    // Add rows
     wallets.forEach((wallet) => {
+      if (!wallet.user) {
+        console.warn("⚠️ Wallet has no user linked:", wallet._id);
+        return;
+      }
+
       wallet.transactions
         .filter(
           (txn) =>
-            [
-              "withdrawal-requested",
-              "withdrawal-approved",
-              "withdrawal-rejected",
-            ].includes(txn.status?.toLowerCase()) &&
+            ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"]
+              .includes(txn.status?.toLowerCase()) &&
             txn.date >= startDate &&
             txn.date <= endDate
         )
         .forEach((txn) => {
-          const kyc = kycMap[wallet.user?._id?.toString()] || {};
+          const userId = wallet.user?._id?.toString();
+          const kyc = userId ? kycMap[userId] : null;
 
           sheet.addRow({
             name: wallet.user?.name || "N/A",
             email: wallet.user?.email || "N/A",
             mobile: wallet.user?.mobile || "N/A",
-            balance: wallet.balance,
-            type: txn.type,
-            amount: txn.amount,
-            status: txn.status,
-            date: txn.date.toISOString().split("T")[0],
-
-            // ✅ KYC Data
-            adharNumber: kyc.adharNumber || "N/A",
-            adharName: kyc.adharName || "N/A",
-            panNumber: kyc.panNumber || "N/A",
-            bankName: kyc.bankName || "N/A",
-            bankAccount: kyc.bankAccount || "N/A",
-            ifscCode: kyc.ifscCode || "N/A",
-            kycStatus: kyc.status || "N/A",
+            balance: wallet.balance || 0,
+            type: txn.type || "N/A",
+            amount: txn.amount || 0,
+            status: txn.status || "N/A",
+            date: txn.date ? txn.date.toISOString().split("T")[0] : "N/A",
+            adharNumber: kyc?.adharNumber || "N/A",
+            adharName: kyc?.adharName || "N/A",
+            panNumber: kyc?.panNumber || "N/A",
+            bankName: kyc?.bankName || "N/A",
+            bankAccount: kyc?.bankAccount || "N/A",
+            ifscCode: kyc?.ifscCode || "N/A",
+            kycStatus: kyc?.status || "N/A",
           });
         });
     });
 
-    // Response as Excel file
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -828,10 +823,11 @@ exports.generateWithdrawalReport = async (req, res) => {
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
-    console.error("Error exporting withdrawal report:", error);
+    console.error("❌ Error exporting withdrawal report:", error);
     res.status(500).send("Failed to generate withdrawal report");
   }
 };
+
 
 
 

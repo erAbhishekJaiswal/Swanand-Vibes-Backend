@@ -1,5 +1,5 @@
 // Example Commission % for 12 Levels
-const COMMISSION_LEVELS = [10, 5, 3, 2, 1, 1, 1, 1, 0.5, 0.5, 0.5, 0.5];
+const COMMISSION_LEVELS = [10, 6, 5, 4, 3, 3, 2, 2, 2, 1, 1, 1];
 // in percentage
 
 module.exports = { COMMISSION_LEVELS };

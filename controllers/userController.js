@@ -14,13 +14,14 @@ const getUserProfile = async (req, res) => {
     const id = req.params.id;
     const user = await User.findById(id);
     const kyc = await Kyc.findOne({ userId: id });
+    const order = await Order.find({ user: id });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
     // if (!kyc) {
     //   res.status(404).json({ message: "KYC not found" });
     // }
-    let usersdata = { user, kyc: kyc?.status || "notSubmitted" }
+    let usersdata = { user, kyc: kyc?.status || "notSubmitted", Isorder: !order ?  0 : order?.length  };
     res.json(usersdata);
   } catch (error) {
     res.status(500).json({ message: "Server error" });

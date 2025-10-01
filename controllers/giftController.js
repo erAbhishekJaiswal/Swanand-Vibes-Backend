@@ -10,7 +10,7 @@ exports.createGift = async (req, res) => {
     const newGift = new Gift({
       title,
       description,
-      achievementLevel,
+      // achievementLevel,
       validity,
       imageUrl: imageUrl,
       // createdBy: req.user.id,
@@ -48,7 +48,10 @@ exports.getGiftById = async (req, res) => {
 exports.updateGift = async (req, res) => {
   try {
     const { title, description, achievementLevel, validity, imageUrl } = req.body;
-    let updateData = { title, description, achievementLevel, validity };
+    let updateData = { title, 
+      description,
+      //  achievementLevel, 
+       validity };
 
     if (imageUrl) updateData.imageUrl = imageUrl;
 
@@ -75,11 +78,11 @@ exports.deleteGift = async (req, res) => {
 };
 
 // Get Gifts by Achievement Level
-exports.getGiftsByAchievementLevel = async (req, res) => {
-  try {
-    const gifts = await Gift.find({ achievementLevel: req.params.achievementLevel });
-    res.json(gifts);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+// exports.getGiftsByAchievementLevel = async (req, res) => {
+//   try {
+//     const gifts = await Gift.find({ achievementLevel: req.params.achievementLevel });
+//     res.json(gifts);
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };

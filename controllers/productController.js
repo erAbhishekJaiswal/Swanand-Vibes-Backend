@@ -3,6 +3,7 @@ const Product = require("../models/Product");
 const cloudinary = require("cloudinary").v2;
 const ExcelJS = require("exceljs");
 const Cart = require("../models/Cart");
+const User = require("../models/User");
 // const createProduct = async (req, res) => {
 //   try {
 //     const product = await Product.create(req.body);
@@ -1497,6 +1498,62 @@ const searchProducts = async (req, res) => {
   }
 };
 
+// add the ratings, reviews and comments on the product
+
+const rateingonProduct = async (req, res) => {
+  try {
+    const { rating, comment, userid } = req.body;
+    
+    const user = await User.findById(userid);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+    }
+    const username = user.name;
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        error: "Product not found",
+      });
+    }
+    // Check if user has already reviewed the product
+    const alreadyReviewed = product.reviews.find(
+      (rev) => rev.user.toString() === userid.toString()
+    );
+    if (alreadyReviewed) {
+      return res.status(400).json({
+        success: false,
+        error: "Product already reviewed",
+      });
+    }
+
+    const ratingData = {
+      user: userid,
+      name: username,
+      rating,
+      comment,
+    };
+    product.reviews.push(ratingData);
+    product.numOfReviews = product.reviews.length;
+    product.ratings =
+      product.reviews.reduce((acc, item) => item.rating + acc, 0) / product.reviews.length;
+    await product.save();
+    res.status(200).json({
+      success: true,
+      data: product,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createProduct,
   getAllProducts,
@@ -1508,5 +1565,6 @@ module.exports = {
   getCommonProductById,
   getFilters,
   exportStockReport,
+  rateingonProduct,
   // searchProducts
 };

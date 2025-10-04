@@ -3,7 +3,7 @@ const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const PDFDocument = require("pdfkit");
 const { distributeCommission } = require("../utils/commissionService");
-
+const path = require("path");
 
 const createOrder = async (req, res) => {
   try {
@@ -461,7 +461,8 @@ const generateInvoice = async (req, res) => {
 
     const doc = new PDFDocument({ margin: 50 });
     // doc.font("./fonts/Roboto-Regular.ttf"); // disable for now
-    doc.font("Helvetica"); // default
+    // doc.font("Helvetica"); // default
+    doc.font(path.resolve(__dirname, "../fonts/Roboto-Regular.ttf"));
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename=invoice-${orderId}.pdf`);

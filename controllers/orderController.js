@@ -374,7 +374,7 @@ const generateInvoice = async (req, res) => {
     // ---------------- HEADER ----------------
     doc
       .fontSize(20)
-      .text("SWAN AND VIBES INVOICE", { align: "center" })
+      .text("SWANAND VIBES INVOICE", { align: "center" })
       .moveDown();
 
     doc

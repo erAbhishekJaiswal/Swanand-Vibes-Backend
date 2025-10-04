@@ -54,6 +54,7 @@ const walletSchema = new mongoose.Schema({
         ], 
         default: "pending" 
       },
+      serviceCharge: { type: Number, default: 0 }
     },
   ],
 });

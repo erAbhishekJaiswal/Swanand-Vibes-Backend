@@ -9,7 +9,8 @@ const {
   generateWithdrawalReport,
   approveWithdrawal,
   getTopLargeAmountWithdrawalUsers,
-  completeWithdrawal
+  completeWithdrawal,
+  getAdminWallet
 } = require("../controllers/walletController");
 // const authMiddleware = require("../middleware/authMiddleware");
 
@@ -25,6 +26,13 @@ router.get(
   "/withdrawal-report",
   // authMiddleware,
   generateWithdrawalReport
+);
+
+//admin wallet get all transactions
+router.get(
+  "/adminwallet",
+  // authMiddleware,
+  getAdminWallet
 );
 
 // Get top 5 large withdrawal users

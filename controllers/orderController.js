@@ -459,8 +459,12 @@ const generateInvoice = async (req, res) => {
     // End and send
     doc.end();
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error generating invoice" });
+    console.error("PDF generation failed:", error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: "Error generating invoice" });
+    } else {
+      res.destroy(); // prevent corrupt stream
+    }
   }
 };
 

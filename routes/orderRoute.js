@@ -10,7 +10,8 @@ const {
     // updateOrderStatus,
     deleteOrder,
     // cancelOrder
-    cancelOrder
+    cancelOrder,
+    generateInvoice
 } = require("../controllers/orderController");
 
 router.post("/:userId", createOrder);
@@ -21,5 +22,7 @@ router.put("/:id", updateOrder);
 router.delete("/:id", deleteOrder);
 // cancelOrder
 router.put("/cancel/:id", cancelOrder);
+// Generate invoice by orderId
+router.get("/:orderId/invoice", generateInvoice);
 
 module.exports = router;

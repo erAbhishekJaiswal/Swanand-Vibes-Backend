@@ -1,292 +1,9 @@
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
-
-// const createOrder = async (req, res) => {
-//   try {
-//     const userId = req.params.userId;
-//     // // console.log("Creating order for user:", userId);
-
-//     const { cartItems, itemsPrice, shippingPrice, taxPrice, totalPrice, address, apartment, city, country, email, mobile, shippingMethod, state, zipCode,paymentStatus,paidAt } = req.body;
-   
-//     const order = await Order.create({
-//       user: userId,
-//       orderItems: cartItems,
-//       itemsPrice,
-//       shippingPrice,
-//       taxPrice,
-//       totalPrice: itemsPrice + shippingPrice + taxPrice,
-//       shippingAddress: {
-//         address,
-//         apartment,
-//         city,
-//         country,
-//         state,
-//         postalCode: zipCode
-//       },
-//       shippingMethod: shippingMethod,
-//       isPaid: true,
-//       paymentStatus: paymentStatus,
-//       paidAt: paidAt,
-//     });
-//     // remove items from cart
-//     const cart = await Cart.findOne({ user: userId });
-//     // // console.log(cart);
-//     if (cart) {
-//           // Remove item from cart
-//       cart.items = cart.items.filter(item => !cartItems.some(orderItem => orderItem.product === item.product));
-//       await cart.save();
-//     }
-//     cart.items.pull(cartItems.map(item => item._id));
-//     await cart.save();
-
-//     res.status(201).json({
-//       success: true,
-//       data: order,
-//     });
-//   } catch (error) {
-//     res.status(400).json({
-//       success: false,
-//       error: error.message,
-//     });
-//   }
-// };
-
-
-// const getAllOrders = async (req, res) => {
-//     try {
-//         const orders = await Order.find();
-//         res.status(200).json({
-//             success: true,
-//             data: orders,
-//         });
-//     } catch (error) {
-//         res.status(400).json({
-//             success: false,
-//             error: error.message,
-//         });
-//     }
-// };
-
-// controllers/orderController.js
-
-// controllers/orderController.js
-
+const PDFDocument = require("pdfkit");
 const { distributeCommission } = require("../utils/commissionService");
 
-// const createOrder = async (req, res) => {
-//   try {
-//     const userId = req.params.userId;
-
-//     const {
-//       cartItems,
-//       itemsPrice,
-//       shippingPrice,
-//       taxPrice,
-//       totalPrice,
-//       address,
-//       apartment,
-//       city,
-//       country,
-//       email,
-//       mobile,
-//       shippingMethod,
-//       state,
-//       zipCode,
-//       paymentStatus,
-//       paidAt,
-//     } = req.body;
-
-//     // after add 
-//       // ✅ Step 1: Validate stock for each product
-//     for (const item of cartItems) {
-//       const product = await Product.findById(item.product);
-
-//       if (!product) {
-//         return res.status(404).json({
-//           success: false,
-//           error: `Product not found: ${item.product}`,
-//         });
-//       }
-
-//       if (product.countInStock < item.qty) {
-//         return res.status(400).json({
-//           success: false,
-//           error: `Not enough stock for ${product.name}. Available: ${product.countInStock}, Requested: ${item.qty}`,
-//         });
-//       }
-//     }
-
-//     // ✅ Step 2: Reduce stock
-//     for (const item of cartItems) {
-//       const product = await Product.findById(item.product);
-//       product.countInStock -= item.qty;
-//       await product.save();
-//     }
-
-
-//     // ✅ Create order
-//     const order = await Order.create({
-//       user: userId,
-//       orderItems: cartItems,
-//       itemsPrice,
-//       shippingPrice,
-//       taxPrice,
-//       totalPrice: itemsPrice + shippingPrice + taxPrice, // safer calc
-//       shippingAddress: {
-//         address,
-//         apartment,
-//         city,
-//         country,
-//         state,
-//         postalCode: zipCode,
-//       },
-//       shippingMethod,
-//       isPaid: true,
-//       paymentstaus:paymentStatus,
-//       paidAt,
-//       commissionsDistributed: false, // NEW FIELD in schema
-//     });
-
-//     // ✅ Remove purchased items from cart
-//     const cart = await Cart.findOne({ user: userId });
-//     if (cart) {
-//       cart.items = cart.items.filter(
-//         (item) => !cartItems.some((orderItem) => orderItem.product.toString() === item.product.toString())
-//       );
-//       await cart.save();
-//     }
-
-//     // ✅ Distribute commissions immediately after order is created & paid
-//     if (order.isPaid && !order.commissionsDistributed) {
-//       await distributeCommission(order._id);
-//     }
-
-//     res.status(201).json({
-//       success: true,
-//       data: order,
-//     });
-//   } catch (error) {
-//     res.status(400).json({
-//       success: false,
-//       error: error.message,
-//     });
-//   }
-// };
-
-//19-9
-// const createOrder = async (req, res) => {
-//   try {
-//     const userId = req.params.userId;
-
-//     const {
-//       cartItems,
-//       itemsPrice,
-//       shippingPrice,
-//       taxPrice,
-//       totalPrice,
-//       address,
-//       apartment,
-//       city,
-//       country,
-//       email,
-//       mobile,
-//       shippingMethod,
-//       state,
-//       zipCode,
-//       paymentStatus,
-//       paidAt,
-//     } = req.body;
-
-//     // ✅ Step 1: Validate stock
-//     for (const item of cartItems) {
-//       const product = await Product.findById(item.product);
-
-//       if (!product) {
-//         return res.status(404).json({
-//           success: false,
-//           error: `Product not found: ${item.product}`,
-//         });
-//       }
-
-//       if (product.countInStock < item.qty) {
-//         return res.status(400).json({
-//           success: false,
-//           error: `Not enough stock for ${product.name}. Available: ${product.countInStock}, Requested: ${item.qty}`,
-//         });
-//       }
-//     }
-
-//     // ✅ Step 2: Reduce stock
-//     for (const item of cartItems) {
-//       const product = await Product.findById(item.product);
-//       product.countInStock -= item.qty;
-//       await product.save();
-//     }
-
-//     // ✅ Step 3: Create order
-//     const order = await Order.create({
-//       user: userId,
-//       orderItems: cartItems,
-//       itemsPrice,
-//       shippingPrice,
-//       taxPrice,
-//       totalPrice: itemsPrice + shippingPrice + taxPrice, // safer calc
-//       shippingAddress: {
-//         address,
-//         apartment,
-//         city,
-//         country,
-//         state,
-//         postalCode: zipCode,
-//       },
-//       shippingMethod,
-//       isPaid: true,
-//       paymentStatus, // fixed typo
-//       paidAt,
-//       commissionsDistributed: false,
-//     });
-
-//     // ✅ Step 4: Remove only purchased items from the cart
-//     const cart = await Cart.findOne({ user: userId });
-//     if (cart) {
-//       cart.items = cart.items.filter(
-//         (item) =>
-//           !cartItems.some(
-//             (orderItem) =>
-//               orderItem.product.toString() === item.product.toString() &&
-//               orderItem.variantId === item.variantId &&
-//               orderItem.size === item.size
-//           )
-//       );
-
-//       // recalc total
-//       cart.total = cart.items.reduce(
-//         (total, item) => total + item.price * item.qty,
-//         0
-//       );
-
-//       await cart.save();
-//     }
-
-//     // ✅ Step 5: Distribute commissions
-//     if (order.isPaid && !order.commissionsDistributed) {
-//       await distributeCommission(order._id);
-//     }
-
-//     res.status(201).json({
-//       success: true,
-//       message: "Order placed successfully. Ordered items removed from cart.",
-//       data: order,
-//     });
-//   } catch (error) {
-//     console.error("Error creating order:", error);
-//     res.status(400).json({
-//       success: false,
-//       error: error.message,
-//     });
-//   }
-// };
 
 const createOrder = async (req, res) => {
   try {
@@ -404,135 +121,6 @@ const createOrder = async (req, res) => {
 };
 
 
-// const getAllOrders = async (req, res) => {
-//   try {
-//     let { page = 1, limit = 10, search, startDate, endDate } = req.query;
-
-//     page = Number(page);
-//     limit = Number(limit);
-
-//     // Base query
-//     let query = {};
-
-//     // ✅ Date filter
-//     if (startDate && endDate) {
-//       query.createdAt = {
-//         $gte: new Date(startDate),
-//         $lte: new Date(endDate),
-//       };
-//     }
-
-//     // ✅ Search filter (name, email, orderId)
-//     if (search) {
-//       query.$or = [
-//         { "user.name": { $regex: search, $options: "i" } }, // case-insensitive name matching": search }, // direct orderId match
-//         { "user.email": { $regex: search, $options: "i" } },
-//         // { "user.mobile": { $regex: search, $options: "i" } },
-//       ];
-//     }
-
-//     // Fetch orders with filters
-//     const orders = await Order.find(query)
-//       .populate("user", "name email")
-//       .populate("orderItems.product", "name price image")
-//       .sort({ createdAt: -1 }) // latest orders first
-//       .skip((page - 1) * limit)
-//       .limit(limit);
-
-//     // Total count for pagination
-//     const totalOrders = await Order.countDocuments(query);
-
-//     res.status(200).json({
-//       success: true,
-//       page,
-//       limit,
-//       totalOrders,
-//       totalPages: Math.ceil(totalOrders / limit),
-//       data: orders.map(order => ({
-//         _id: order._id,
-//         user: order.user
-//           ? {
-//               _id: order.user._id,
-//               name: order.user.name,
-//               email: order.user.email,
-//             }
-//           : null,
-//         orderItems: order.orderItems.map(item => ({
-//           product: item.product?._id,
-//           name: item.product?.name || item.name,
-//           price: item.price,
-//           quantity: item.quantity,
-//           image: item.product?.image || item.image,
-//         })),
-//         shippingAddress: order.shippingAddress,
-//         paymentMethod: order.paymentMethod,
-//         itemsPrice: order.itemsPrice,
-//         taxPrice: order.taxPrice,
-//         shippingPrice: order.shippingPrice,
-//         totalPrice: order.totalPrice,
-//         isPaid: order.isPaid,
-//         paidAt: order.paidAt,
-//         isDelivered: order.isDelivered,
-//         deliveryStatus: order.deliveryStatus,
-//         deliveredAt: order.deliveredAt,
-//         createdAt: order.createdAt,
-//         updatedAt: order.updatedAt,
-//       })),
-//     });
-//   } catch (error) {
-//     res.status(400).json({
-//       success: false,
-//       error: error.message,
-//     });
-//   }
-// };
-
-
-
-// const getAllOrders = async (req, res) => {
-//   try {
-//     const orders = await Order.find()
-//       .populate("user", "name email") // include user details
-//       .populate("orderItems.product", "name price image"); // include product details
-
-//     res.status(200).json({
-//       success: true,
-//       data: orders.map(order => ({
-//         _id: order._id,
-//         user: order.user ? {
-//           _id: order.user._id,
-//           name: order.user.name,
-//           email: order.user.email,
-//         } : null,
-//         orderItems: order.orderItems.map(item => ({
-//           product: item.product?._id,
-//           name: item.product?.name || item.name,
-//           price: item.price,
-//           quantity: item.quantity,
-//           image: item.product?.image || item.image,
-//         })),
-//         shippingAddress: order.shippingAddress,
-//         paymentMethod: order.paymentMethod,
-//         itemsPrice: order.itemsPrice,
-//         taxPrice: order.taxPrice,
-//         shippingPrice: order.shippingPrice,
-//         totalPrice: order.totalPrice,
-//         isPaid: order.isPaid,
-//         paidAt: order.paidAt,
-//         isDelivered: order.isDelivered,
-//         deliveryStatus: order.deliveryStatus,
-//         deliveredAt: order.deliveredAt,
-//         createdAt: order.createdAt,
-//         updatedAt: order.updatedAt,
-//       })),
-//     });
-//   } catch (error) {
-//     res.status(400).json({
-//       success: false,
-//       error: error.message,
-//     });
-//   }
-// };
 
 const getAllOrders = async (req, res) => {
   try {
@@ -743,6 +331,115 @@ const cancelOrder = async (req, res) => {
     }
 };
 
+// Generate Invoice PDF
+const generateInvoice = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId)
+      .populate("user", "name email")
+      .populate("orderItems.product", "name");
+
+      
+      // curuncy in INR function foramt
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR"
+  }).format(value);
+};
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Create PDF
+    const doc = new PDFDocument({ margin: 50 });
+
+    // Load your custom font
+doc.font("fonts/Roboto-Regular.ttf");
+    // Pipe PDF to response
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename=invoice-${orderId}.pdf`);
+    doc.pipe(res);
+
+    // ---------------- HEADER ----------------
+    doc
+      .fontSize(20)
+      .text("SWAN AND VIBES INVOICE", { align: "center" })
+      .moveDown();
+
+    doc
+      .fontSize(10)
+      .text(`Invoice Number: ${order._id}`, { align: "left" })
+      .text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, { align: "left" })
+      .moveDown();
+
+    // ---------------- USER DETAILS ----------------
+    doc
+      .fontSize(12)
+      .text(`Billed To: ${order.user?.name || "Guest"}`)
+      .text(`Email: ${order.user?.email || "-"}`)
+      .moveDown();
+
+    // ---------------- SHIPPING ADDRESS ----------------
+    doc
+      .fontSize(12)
+      .text("Shipping Address:")
+      .text(`${order.shippingAddress.apartment || ""} ${order.shippingAddress.address}`)
+      .text(`${order.shippingAddress.city}, ${order.shippingAddress.state} - ${order.shippingAddress.postalCode}`)
+      .text(order.shippingAddress.country)
+      .moveDown();
+
+    // ---------------- ORDER ITEMS ----------------
+    doc.fontSize(14).text("Order Summary", { underline: true }).moveDown(0.5);
+
+    // Table Header
+    doc.fontSize(12).text("Product", 50, doc.y, { continued: true });
+    // doc.text("Variant", 200, doc.y, { continued: true });
+    doc.text("Size", 180, doc.y, { continued: true });
+    doc.text("Qty", 250, doc.y, { continued: true });
+    doc.text("Price", 300, doc.y, { continued: true });
+    doc.text("Total", 370, doc.y);
+    doc.moveDown(0.5);
+    doc.moveTo(50, doc.y).lineTo(560, doc.y).stroke();
+    doc.moveDown(0.5);
+
+    // Table Rows
+
+    order.orderItems.forEach((item) => {
+      const total = item.qty * item.price;
+      doc.text(item.name, 50, doc.y, { continued: true });
+      // doc.text(item.variantId, 200, doc.y, { continued: true });
+      doc.text(item.size, 180, doc.y, { continued: true });
+      doc.text(item.qty.toString(), 250, doc.y, { continued: true });
+      doc.text( formatCurrency(item.price), 300, doc.y, { continued: true });
+      doc.text(`₹ ${total.toFixed(2)}`, 370, doc.y);
+    });
+
+    doc.moveDown();
+
+    // ---------------- PRICE SUMMARY ----------------
+    doc.moveTo(50, doc.y).lineTo(560, doc.y).stroke().moveDown();
+    doc.text(`Items Price: ₹ ${order.itemsPrice.toFixed(2)}`, { align: "right" });
+    doc.text(`Tax: ₹ ${order.taxPrice.toFixed(2)}`, { align: "right" });
+    doc.text(`Shipping: ₹ ${order.shippingPrice.toFixed(2)}`, { align: "right" });
+    doc.text(`Total: ₹ ${order.totalPrice.toFixed(2)}`, { align: "right", bold: true });
+    doc.moveDown();
+
+    // ---------------- FOOTER ----------------
+    doc
+      .fontSize(10)
+      .text("Thank you for your purchase!", { align: "center" })
+      .text("This is a computer-generated invoice.", { align: "center" });
+
+    // End and send
+    doc.end();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error generating invoice" });
+  }
+};
+
 module.exports = {
     createOrder,
     getAllOrders,
@@ -750,5 +447,6 @@ module.exports = {
     getOrderById,
     updateOrder,
     deleteOrder,
-    cancelOrder
+    cancelOrder,
+    generateInvoice
 };

@@ -356,7 +356,7 @@ const formatCurrency = (value) => {
     const doc = new PDFDocument({ margin: 50 });
 
     // Load your custom font
-doc.font("fonts/Roboto-Regular.ttf");
+doc.font("./fonts/Roboto-Regular.ttf");
     // Pipe PDF to response
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename=invoice-${orderId}.pdf`);

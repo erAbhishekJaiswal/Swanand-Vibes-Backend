@@ -332,113 +332,157 @@ const cancelOrder = async (req, res) => {
 };
 
 // Generate Invoice PDF
+// const generateInvoice = async (req, res) => {
+//   try {
+//     const { orderId } = req.params;
+//     const order = await Order.findById(orderId)
+//       .populate("user", "name email")
+//       .populate("orderItems.product", "name");
+
+      
+//       // curuncy in INR function foramt
+// const formatCurrency = (value) => {
+//   return new Intl.NumberFormat("en-IN", {
+//     style: "currency",
+//     currency: "INR"
+//   }).format(value);
+// };
+
+//     if (!order) {
+//       return res.status(404).json({ message: "Order not found" });
+//     }
+
+//     // Create PDF
+//     const doc = new PDFDocument({ margin: 50 });
+
+//     // Load your custom font
+// doc.font("./fonts/Roboto-Regular.ttf");
+//     // Pipe PDF to response
+//     res.setHeader("Content-Type", "application/pdf");
+//     res.setHeader("Content-Disposition", `inline; filename=invoice-${orderId}.pdf`);
+//     doc.pipe(res);
+
+//     // ---------------- HEADER ----------------
+//     doc
+//       .fontSize(20)
+//       .text("SWAN AND VIBES INVOICE", { align: "center" })
+//       .moveDown();
+
+//     doc
+//       .fontSize(10)
+//       .text(`Invoice Number: ${order._id}`, { align: "left" })
+//       .text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, { align: "left" })
+//       .moveDown();
+
+//     // ---------------- USER DETAILS ----------------
+//     doc
+//       .fontSize(12)
+//       .text(`Billed To: ${order.user?.name || "Guest"}`)
+//       .text(`Email: ${order.user?.email || "-"}`)
+//       .moveDown();
+
+//     // ---------------- SHIPPING ADDRESS ----------------
+//     doc
+//       .fontSize(12)
+//       .text("Shipping Address:")
+//       .text(`${order.shippingAddress.apartment || ""} ${order.shippingAddress.address}`)
+//       .text(`${order.shippingAddress.city}, ${order.shippingAddress.state} - ${order.shippingAddress.postalCode}`)
+//       .text(order.shippingAddress.country)
+//       .moveDown();
+
+//     // ---------------- ORDER ITEMS ----------------
+//     doc.fontSize(14).text("Order Summary", { underline: true }).moveDown(0.5);
+
+//     // Table Header
+//     doc.fontSize(12).text("Product", 50, doc.y, { continued: true });
+//     // doc.text("Variant", 200, doc.y, { continued: true });
+//     doc.text("Size", 180, doc.y, { continued: true });
+//     doc.text("Qty", 250, doc.y, { continued: true });
+//     doc.text("Price", 300, doc.y, { continued: true });
+//     doc.text("Total", 370, doc.y);
+//     doc.moveDown(0.5);
+//     doc.moveTo(50, doc.y).lineTo(560, doc.y).stroke();
+//     doc.moveDown(0.5);
+
+//     // Table Rows
+
+//     order.orderItems.forEach((item) => {
+//       const total = item.qty * item.price;
+//       doc.text(item.name, 50, doc.y, { continued: true });
+//       // doc.text(item.variantId, 200, doc.y, { continued: true });
+//       doc.text(item.size, 180, doc.y, { continued: true });
+//       doc.text(item.qty.toString(), 250, doc.y, { continued: true });
+//       doc.text( formatCurrency(item.price), 300, doc.y, { continued: true });
+//       doc.text(`₹ ${total.toFixed(2)}`, 370, doc.y);
+//     });
+
+//     doc.moveDown();
+
+//     // ---------------- PRICE SUMMARY ----------------
+//     doc.moveTo(50, doc.y).lineTo(560, doc.y).stroke().moveDown();
+//     doc.text(`Items Price: ₹ ${order.itemsPrice.toFixed(2)}`, { align: "right" });
+//     doc.text(`Tax: ₹ ${order.taxPrice.toFixed(2)}`, { align: "right" });
+//     doc.text(`Shipping: ₹ ${order.shippingPrice.toFixed(2)}`, { align: "right" });
+//     doc.text(`Total: ₹ ${order.totalPrice.toFixed(2)}`, { align: "right", bold: true });
+//     doc.moveDown();
+
+//     // ---------------- FOOTER ----------------
+//     doc
+//       .fontSize(10)
+//       .text("Thank you for your purchase!", { align: "center" })
+//       .text("This is a computer-generated invoice.", { align: "center" });
+
+//     // End and send
+//     doc.end();
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Error generating invoice" });
+//   }
+// };
+
 const generateInvoice = async (req, res) => {
   try {
     const { orderId } = req.params;
+
     const order = await Order.findById(orderId)
       .populate("user", "name email")
       .populate("orderItems.product", "name");
-
-      
-      // curuncy in INR function foramt
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR"
-  }).format(value);
-};
 
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    // Create PDF
-    const doc = new PDFDocument({ margin: 50 });
+    const formatCurrency = (value) => {
+      return new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: "INR"
+      }).format(value);
+    };
 
-    // Load your custom font
-doc.font("./fonts/Roboto-Regular.ttf");
-    // Pipe PDF to response
+    const doc = new PDFDocument({ margin: 50 });
+    // doc.font("./fonts/Roboto-Regular.ttf"); // disable for now
+    doc.font("Helvetica"); // default
+
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename=invoice-${orderId}.pdf`);
     doc.pipe(res);
 
-    // ---------------- HEADER ----------------
-    doc
-      .fontSize(20)
-      .text("SWAN AND VIBES INVOICE", { align: "center" })
-      .moveDown();
+    doc.fontSize(20).text("Test Invoice", { align: "center" }).moveDown();
+    doc.fontSize(12).text(`Order ID: ${order._id}`);
+    doc.text(`Customer: ${order.user?.name || "Guest"}`);
+    doc.text(`Total: ${formatCurrency(order.totalPrice)}`);
 
-    doc
-      .fontSize(10)
-      .text(`Invoice Number: ${order._id}`, { align: "left" })
-      .text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, { align: "left" })
-      .moveDown();
-
-    // ---------------- USER DETAILS ----------------
-    doc
-      .fontSize(12)
-      .text(`Billed To: ${order.user?.name || "Guest"}`)
-      .text(`Email: ${order.user?.email || "-"}`)
-      .moveDown();
-
-    // ---------------- SHIPPING ADDRESS ----------------
-    doc
-      .fontSize(12)
-      .text("Shipping Address:")
-      .text(`${order.shippingAddress.apartment || ""} ${order.shippingAddress.address}`)
-      .text(`${order.shippingAddress.city}, ${order.shippingAddress.state} - ${order.shippingAddress.postalCode}`)
-      .text(order.shippingAddress.country)
-      .moveDown();
-
-    // ---------------- ORDER ITEMS ----------------
-    doc.fontSize(14).text("Order Summary", { underline: true }).moveDown(0.5);
-
-    // Table Header
-    doc.fontSize(12).text("Product", 50, doc.y, { continued: true });
-    // doc.text("Variant", 200, doc.y, { continued: true });
-    doc.text("Size", 180, doc.y, { continued: true });
-    doc.text("Qty", 250, doc.y, { continued: true });
-    doc.text("Price", 300, doc.y, { continued: true });
-    doc.text("Total", 370, doc.y);
-    doc.moveDown(0.5);
-    doc.moveTo(50, doc.y).lineTo(560, doc.y).stroke();
-    doc.moveDown(0.5);
-
-    // Table Rows
-
-    order.orderItems.forEach((item) => {
-      const total = item.qty * item.price;
-      doc.text(item.name, 50, doc.y, { continued: true });
-      // doc.text(item.variantId, 200, doc.y, { continued: true });
-      doc.text(item.size, 180, doc.y, { continued: true });
-      doc.text(item.qty.toString(), 250, doc.y, { continued: true });
-      doc.text( formatCurrency(item.price), 300, doc.y, { continued: true });
-      doc.text(`₹ ${total.toFixed(2)}`, 370, doc.y);
-    });
-
-    doc.moveDown();
-
-    // ---------------- PRICE SUMMARY ----------------
-    doc.moveTo(50, doc.y).lineTo(560, doc.y).stroke().moveDown();
-    doc.text(`Items Price: ₹ ${order.itemsPrice.toFixed(2)}`, { align: "right" });
-    doc.text(`Tax: ₹ ${order.taxPrice.toFixed(2)}`, { align: "right" });
-    doc.text(`Shipping: ₹ ${order.shippingPrice.toFixed(2)}`, { align: "right" });
-    doc.text(`Total: ₹ ${order.totalPrice.toFixed(2)}`, { align: "right", bold: true });
-    doc.moveDown();
-
-    // ---------------- FOOTER ----------------
-    doc
-      .fontSize(10)
-      .text("Thank you for your purchase!", { align: "center" })
-      .text("This is a computer-generated invoice.", { align: "center" });
-
-    // End and send
     doc.end();
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error generating invoice" });
+    console.error("PDF generation failed:", error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: "Error generating invoice" });
+    } else {
+      res.destroy(); // prevent corrupt stream
+    }
   }
 };
+
 
 module.exports = {
     createOrder,

@@ -918,6 +918,53 @@ const getCommonProducts = async (req, res) => {
   }
 };
 
+// get Products according to these url: axios.get(`http://localhost:5000/api/products/common?search=${encodeURIComponent(searchQuery)}&limit=10`, { signal: controller.signal })
+
+const searchProductforPurchase = async (req, res) => {
+  const { page = 1, limit = 10, search = '' } = req.query;
+
+  const skip = (page - 1) * limit;
+
+  const queryObj = { isActive: true }; // Only fetch active products
+
+  // Search by product name
+  // if (search) queryObj.name = { $regex: search, $options: 'i' };
+      
+  if (search) {
+  queryObj.$or = [
+    { name: { $regex: search, $options: "i" } },
+    { description: { $regex: search, $options: "i" } },
+    { brand: { $regex: search, $options: "i" } },
+  ];
+}
+
+  const [products, total] = await Promise.all([
+    Product.find(queryObj)
+      // .populate("category", "name")
+      .skip(skip)
+      .limit(Number(limit)),
+    Product.countDocuments(queryObj),
+  ]);
+
+  if (!products.length) {
+    return res
+      .status(404)
+      .json({ success: false, error: "No products found" });
+  }
+
+  res.status(200).json({
+    success: true,
+    page: Number(page),
+    limit: Number(limit),
+    totalPages: Math.ceil(total / limit),
+    totalItems: total,
+    data: products,
+  });
+};
+
+
+
+
 // const getCommonProducts = async (req, res) => {
 //   const { page = 1, limit = 10, search = '', category = '', minPrice, maxPrice, brands, minRating, sort, size } = req.query;
 //   const skip = (page - 1) * limit;
@@ -1566,5 +1613,6 @@ module.exports = {
   getFilters,
   exportStockReport,
   rateingonProduct,
+  searchProductforPurchase
   // searchProducts
 };

@@ -339,7 +339,7 @@ exports.approveWithdrawal = async (req, res) => {
     }
 
     // Calculate service charge (5%)
-    const serviceCharge = Math.floor(txn.amount * 0.05);
+    const serviceCharge = Math.floor(txn.amount * 0.15);
     const netAmount = txn.amount - serviceCharge;
 
     // Deduct total amount (user's full requested amount) from user's wallet

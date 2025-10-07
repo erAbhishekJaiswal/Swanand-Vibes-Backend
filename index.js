@@ -24,6 +24,9 @@ app.use("/api/pay", require('./routes/payment'));
 app.use("/api/category", require('./routes/categoryRoute')); 
 app.use("/api/gallery", require('./routes/galleryRoutes'));
 app.use("/api/gift", require('./routes/giftRoutes'));
+app.use("/api/vendor", require('./routes/vendorRoute'));
+app.use("/api/purchase", require('./routes/purchaseRoutes'));
+app.use("/api/report", require('./routes/reportRoute'));
 
 app.listen(5000, () => {
   console.log('Server is running on http://localhost:5000')

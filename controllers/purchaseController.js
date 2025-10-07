@@ -274,7 +274,8 @@ exports.createPurchase = async (req, res) => {
         // console.log("Added itemDoc:", JSON.stringify(itemDoc, null, 2));
       }
 
-      const totalAmount = subTotal + totalTax;
+      // totalAmount with tax persent
+      const totalAmount = subTotal * totalTax / 100 ;
       const createdArr = await Purchase.create(
         [
           {

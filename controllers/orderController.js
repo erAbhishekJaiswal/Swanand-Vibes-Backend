@@ -371,14 +371,22 @@ const generateInvoice = async (req, res) => {
     );
     doc.pipe(res);
 
+
     // ---------------- HEADER ----------------
+     doc  
+      .rect(0, 0, doc.page.width, 90)
+      .fill("#1e3a8a"); // navy blue header background
+
     doc
       .fontSize(20)
+      .fillColor("white")
       .text("SWANAND VIBES INVOICE", { align: "center" })
       .moveDown();
 
+    // ---------------- ORDER DETAILS ----------------
     doc
       .fontSize(10)
+      .fillColor("black")
       .text(`Invoice Number: ${order._id}`, { align: "left" })
       .text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, {
         align: "left",
@@ -451,10 +459,16 @@ const generateInvoice = async (req, res) => {
     doc.moveDown();
 
     // ---------------- FOOTER ----------------
-    doc
-      .fontSize(10)
-      .text("Thank you for your purchase!", { align: "center" })
-      .text("This is a computer-generated invoice.", { align: "center" });
+    // doc
+    //   .fontSize(10)
+    //   .text("Thank you for your purchase!", { align: "center" })
+    //   .text("This is a computer-generated invoice.", { align: "center" });
+
+        doc
+      .fontSize(12)
+      .fillColor("black")
+      .text("www.swanandvibes.com", { align: "center" })
+      .moveDown(0.5);
 
     // End and send
     doc.end();

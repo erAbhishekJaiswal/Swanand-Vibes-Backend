@@ -3,7 +3,8 @@ const router = express.Router();
 
 const {
     fifoPLReport,
-    profitLossReport
+    profitLossReport,
+    generatePurchaseInvoice
     // getReports,
     // getReportById,
     // updateReportStatus,
@@ -12,7 +13,7 @@ const {
 
 router.get("/fifo", fifoPLReport);
 router.get("/profitandloss", profitLossReport);
-// router.get("/:id", getReportById);
+router.get("/:id/invoice",generatePurchaseInvoice);
 // router.put("/:id", updateReportStatus);
 // router.delete("/:id", deleteReport);
 

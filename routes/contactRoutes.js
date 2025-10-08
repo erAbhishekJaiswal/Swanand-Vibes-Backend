@@ -1,5 +1,3 @@
-// routes/contactRoutes.js
-// import express from "express";
 const express = require("express");
 const {
     createContact,
@@ -8,13 +6,7 @@ const {
     updateContactStatus,
     deleteContact,
 } = require("../controllers/contactController.js");
-// import {
-//   createContact,
-//   getContacts,
-//   getContactById,
-//   updateContactStatus,
-//   deleteContact,
-// } from "../controllers/contactController.js";
+
 
 const router = express.Router();
 

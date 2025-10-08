@@ -1,12 +1,6 @@
-// controllers/contactController.js
-// import Contact from "../models/Contact.js";
 const Contact = require("../models/Contact");
 
-/**
- * @desc    Create a new contact form entry
- * @route   POST /api/contact
- * @access  Public
- */
+
 const createContact = async (req, res) => {
   try {
     const { name, email, phone, subject, message } = req.body;
@@ -31,11 +25,6 @@ const createContact = async (req, res) => {
   }
 };
 
-/**
- * @desc    Get all contact form submissions (Admin only)
- * @route   GET /api/contact
- * @access  Private/Admin
- */
 const getContacts = async (req, res) => {
   try {
     
@@ -91,11 +80,6 @@ const getContacts = async (req, res) => {
   }
 };
 
-/**
- * @desc    Get a single contact form submission by ID
- * @route   GET /api/contact/:id
- * @access  Private/Admin
- */
 const getContactById = async (req, res) => {
   try {
     const contact = await Contact.findById(req.params.id);
@@ -108,11 +92,6 @@ const getContactById = async (req, res) => {
   }
 };
 
-/**
- * @desc    Update contact status (e.g., in-progress, resolved)
- * @route   PUT /api/contact/:id
- * @access  Private/Admin
- */
 const updateContactStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -131,11 +110,6 @@ const updateContactStatus = async (req, res) => {
   }
 };
 
-/**
- * @desc    Delete a contact form submission
- * @route   DELETE /api/contact/:id
- * @access  Private/Admin
- */
 const deleteContact = async (req, res) => {
   try {
     const contact = await Contact.findById(req.params.id);

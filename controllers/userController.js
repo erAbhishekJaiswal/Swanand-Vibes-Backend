@@ -6,7 +6,6 @@ const Cart = require("../models/Cart");
 const Product = require("../models/Product");
 const Contact = require("../models/Contact");
 const Gift = require("../models/Gift");
-// import User from "../models/User.js";
 
 
 const getUserProfile = async (req, res) => {
@@ -18,9 +17,6 @@ const getUserProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    // if (!kyc) {
-    //   res.status(404).json({ message: "KYC not found" });
-    // }
     let usersdata = { user, kyc: kyc?.status || "notSubmitted", Isorder: !order ?  0 : order?.length  };
     res.json(usersdata);
   } catch (error) {
@@ -41,119 +37,6 @@ const getUserAddress = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-// const getAllUsers = async (req, res) => {
-//   try {
-//     const users = await User.find();
-//     res.json(users);
-//   } catch (error) {
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-// Get All Users for Admin
-// controllers/userController.js
-// const getAllUsers = async (req, res) => {
-//   try {
-//     let { page = 1, limit = 10, search = "", role } = req.query;
-
-//     page = Number(page);
-//     limit = Number(limit);
-
-//     // Base query
-//     let query = {};
-
-//     // ✅ Role filter
-//     if (role) {
-//       query.role = role;
-//     }
-
-//     // ✅ Search filter (name, email)
-//     if (search) {
-//       query.$or = [
-//         { name: { $regex: search, $options: "i" } },
-//         { email: { $regex: search, $options: "i" } },
-//       ];
-//     }
-
-//     // Fetch users with filters + pagination
-//     const users = await User.find(query)
-//       .sort({ createdAt: -1 }) // newest first
-//       .skip((page - 1) * limit)
-//       .limit(limit);
-
-//     // Count for pagination
-//     const totalUsers = await User.countDocuments(query);
-
-//     res.status(200).json({
-//       success: true,
-//       page,
-//       limit,
-//       totalUsers,
-//       totalPages: Math.ceil(totalUsers / limit),
-//       data: users,
-//     });
-//   } catch (error) {
-//     res.status(500).json({
-//       success: false,
-//       message: "Server error",
-//       error: error.message,
-//     });
-//   }
-// };
-
-
-// controllers/userController.js
-// const getAllUsers = async (req, res) => {
-//   try {
-//     let { page, limit, search, role } = req.query;
-
-//     // ✅ Ensure defaults when query params are empty
-//     page = page && !isNaN(page) ? Number(page) : 1;
-//     limit = limit && !isNaN(limit) ? Number(limit) : 10;
-
-//     // Base query
-//     let query = {};
-
-//     // ✅ Role filter
-//     if (role && role.trim() !== "") {
-//       query.role = role;
-//     }
-
-//     // ✅ Search filter (name, email)
-//     if (search && search.trim() !== "") {
-//       query.$or = [
-//         { name: { $regex: search, $options: "i" } },
-//         { email: { $regex: search, $options: "i" } },
-//       ];
-//     }
-
-//     // Fetch users with filters + pagination
-//     const users = await User.find(query)
-//       // .sort({ createdAt: -1 }) // newest first
-//       .skip((page - 1) * limit)
-//       .limit(limit);
-
-//     // Count for pagination
-//     const totalUsers = await User.countDocuments(query);
-
-//     res.status(200).json({
-//       success: true,
-//       page,
-//       limit,
-//       totalUsers,
-//       totalPages: Math.ceil(totalUsers / limit),
-//       data: users,
-//     });
-//   } catch (error) {
-//     res.status(500).json({
-//       success: false,
-//       message: "Server error",
-//       error: error.message,
-//     });
-//   }
-// };
-
 
 const getAllUsers = async (req, res) => {
   try {
@@ -295,47 +178,6 @@ const getDownline = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-
-// Admin Dashboard API
-// const adminDashboard = async (req, res) => {
-//   try {
-//     const id = req.params.id;
-//     const user = await User.findById(id);
-
-//     if (!user || user.role !== "admin") {
-//       return res.status(403).json({ message: "Access denied" });
-//     }
-//     // user count, product count, withdrawal count, deposit count, order count, order pending count, order completed count, contact count, and kyc pending count
-//     const userCount = await User.countDocuments();
-//     const productCount = await Product.countDocuments();
-//     const withdrawalCount = await Wallet.countDocuments();
-//     const depositCount = await Wallet.countDocuments();
-//     const orderCount = await Order.countDocuments();
-//     // const orderPendingCount = await Order.countDocuments({ status: "pending" });
-//     // const orderCompletedCount = await Order.countDocuments({ status: "completed" });
-//     const contactCount = await Contact.countDocuments();
-//     const kycPendingCount = await Kyc.countDocuments();
-
-//     // if (!userCount || !productCount || !withdrawalCount || !depositCount || !orderCount || !orderPendingCount || !orderCompletedCount || !contactCount || !kycPendingCount) {
-//     //   return res.status(404).json({ message: "Data not found" });
-//     // }
-
-//     res.json({
-//       userCount,
-//       productCount,
-//       withdrawalCount,
-//       depositCount,
-//       orderCount,
-//       // orderPendingCount,
-//       // orderCompletedCount,
-//       contactCount,
-//       kycPendingCount,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// };
 
 const adminDashboard = async (req, res) => {
   try {

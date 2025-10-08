@@ -1,10 +1,8 @@
-// controllers/walletController.js
 const Wallet = require("../models/Wallet");
 const User = require("../models/User");
 const Kyc = require("../models/Kyc");
 const ExcelJS = require("exceljs");
 const AdminWallet = require("../models/AdminWallet");
-// const User = require("../models/User"); // assuming you have User model
 
 // Get wallet of a user
 exports.getWallet = async (req, res) => {
@@ -260,66 +258,6 @@ exports.requestWithdrawal = async (req, res) => {
   }
 };
 
-// Approve withdrawal (admin action)
-// exports.approveWithdrawal = async (req, res) => {
-//   try {
-//     const { walletId, txnId } = req.body;
-
-//     // const user = await Wallet.findById(req.params.id);
-//     // if (!user) {
-//     //   return res.status(404).json({ message: "User not found" });
-//     // }
-
-//     const wallet = await Wallet.findById(walletId);
-//     if (!wallet) return res.status(404).json({ message: "Wallet not found" });
-
-//     const txn = wallet.transactions.id(txnId);
-//     if (!txn || txn.status !== "withdrawal-requested") {
-//       return res.status(400).json({ message: "Invalid transaction" });
-//     }
-
-//     if (wallet.balance < txn.amount) {
-//       txn.status = "withdrawal-rejected";
-//       await wallet.save();
-//       return res
-//         .status(400)
-//         .json({ message: "Insufficient balance at approval" });
-//     }
-//     // console.log({amount: txn.amount, balance: wallet.balance, txnId, walletId});
-    
-
-//     // creadit the admin wallet as service charge or fee 
-//     // const adminWallet = await AdminWallet.find();
-//     // if (!adminWallet) {
-//     //   return res.status(404).json({ message: "Admin Wallet not found" });
-//     // }
-//     // console.log({adminWallet});
-//     let adminWallet
-
-//     const serviceCharge = Math.floor(txn.amount * 0.02); // 2% service charge
-//       adminWallet.balance = serviceCharge;
-//       // console.log({serviceCharge, adminWallet});
-      
-//       adminWallet.transactions.push({
-//         type: "credit",
-//         amount: serviceCharge,
-//         timestamp: new Date(),
-//       });
-//       await AdminWallet.create(adminWallet);
-//       const netAmount = txn.amount - serviceCharge;
-//       txn.amount = netAmount; // update the transaction amount after deducting service charge
-//     // Deduct amount from wallet
-//     wallet.balance -= txn.amount;
-//     txn.status = "withdrawal-approved";
-//     txn.balanceAfter = wallet.balance;
-
-//     await wallet.save();
-//     res.json({ message: "Withdrawal approved successfully" });
-//   } catch (error) {
-//     console.error(error);
-//   }
-// };
-
 exports.approveWithdrawal = async (req, res) => {
   try {
     const { walletId, txnId } = req.body;
@@ -379,8 +317,6 @@ exports.approveWithdrawal = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
 
 // delete the withdraw request
 exports.deleteWithdrawalRequest = async (req, res) => {
@@ -529,7 +465,6 @@ exports.generateWithdrawalReport = async (req, res) => {
   }
 };
 
-
 exports.getTopLargeAmountWithdrawalUsers = async (req, res) => {
   try {
     const { start, end } = req.query;
@@ -592,18 +527,6 @@ exports.getTopLargeAmountWithdrawalUsers = async (req, res) => {
     res.status(500).send("Failed to fetch top withdrawal users");
   }
 };
-
-// admin wallet details
-// exports.getAdminWallet = async (req, res) => {
-//   try {
-//     const wallet = await AdminWallet.find();
-//     res.json(wallet);
-//   } catch (error) {
-//     console.error("Error fetching admin wallet:", error);
-//     res.status(500).send("Failed to fetch admin wallet");
-//   }
-// };
-
 
 exports.getAdminWallet = async (req, res) => {
   try {

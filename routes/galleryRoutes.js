@@ -11,8 +11,6 @@ const {
   getImagesByCategory,getAllgallery
 } = require("../controllers/galleryController");
 
-// const { protect, isAdmin } = require("../middleware/authMiddleware");
-
 // Admin upload
 router.post("/", createImage);
 

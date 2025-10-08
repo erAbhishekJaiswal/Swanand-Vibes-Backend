@@ -1,4 +1,3 @@
-// controllers/galleryController.js
 const Gallery = require("../models/Gallery");
 
 // Upload new image

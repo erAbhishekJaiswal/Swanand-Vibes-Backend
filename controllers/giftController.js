@@ -76,13 +76,3 @@ exports.deleteGift = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
-// Get Gifts by Achievement Level
-// exports.getGiftsByAchievementLevel = async (req, res) => {
-//   try {
-//     const gifts = await Gift.find({ achievementLevel: req.params.achievementLevel });
-//     res.json(gifts);
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };

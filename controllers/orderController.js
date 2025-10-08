@@ -482,50 +482,6 @@ const generateInvoice = async (req, res) => {
   }
 };
 
-// const generateInvoice = async (req, res) => {
-//   try {
-//     const { orderId } = req.params;
-
-//     const order = await Order.findById(orderId)
-//       .populate("user", "name email")
-//       .populate("orderItems.product", "name");
-
-//     if (!order) {
-//       return res.status(404).json({ message: "Order not found" });
-//     }
-
-//     const formatCurrency = (value) => {
-//       return new Intl.NumberFormat("en-IN", {
-//         style: "currency",
-//         currency: "INR"
-//       }).format(value);
-//     };
-
-//     const doc = new PDFDocument({ margin: 50 });
-//     // doc.font("./fonts/Roboto-Regular.ttf"); // disable for now
-//     // doc.font("Helvetica"); // default
-//     doc.font(path.resolve(__dirname, "../fonts/Roboto-Regular.ttf"));
-
-//     res.setHeader("Content-Type", "application/pdf");
-//     res.setHeader("Content-Disposition", `inline; filename=invoice-${orderId}.pdf`);
-//     doc.pipe(res);
-
-//     doc.fontSize(20).text("Test Invoice", { align: "center" }).moveDown();
-//     doc.fontSize(12).text(`Order ID: ${order._id}`);
-//     doc.text(`Customer: ${order.user?.name || "Guest"}`);
-//     doc.text(`Total: ${formatCurrency(order.totalPrice)}`);
-
-//     doc.end();
-//   } catch (error) {
-//     console.error("PDF generation failed:", error);
-//     if (!res.headersSent) {
-//       res.status(500).json({ message: "Error generating invoice" });
-//     } else {
-//       res.destroy(); // prevent corrupt stream
-//     }
-//   }
-// };
-
 module.exports = {
   createOrder,
   getAllOrders,

@@ -16,13 +16,181 @@ function genInvoiceNumber() {
     .slice(-6)}`;
 }
 
+// exports.createPurchase = async (req, res) => {
+//   const session = await mongoose.startSession();
+//   try {
+//     const userId = "68afebc726009740870c1b01";
+//     const { vendorId, items, paymentMethod, notes, invoiceFiles } = req.body;
+
+//     // console.log("Received body:", JSON.stringify(req.body, null, 2));
+
+//     const cleanItems = (items || []).filter(
+//       (item) =>
+//         item.productId &&
+//         Number(item.quantity) > 0 &&
+//         Number(item.purchasePrice) >= 0
+//     );
+
+//     // console.log("cleanItems:", JSON.stringify(cleanItems, null, 2));
+
+//     if (!vendorId || cleanItems.length === 0) {
+//       return res.status(400).json({
+//         message: "vendorId and at least one valid item are required",
+//       });
+//     }
+
+//     const vendor = await Vendor.findById(vendorId);
+//     if (!vendor) {
+//       return res.status(404).json({ message: "Vendor not found" });
+//     }
+//     let subTotal = 0;
+//     let totalTax = 0;
+//     let totalQuantity = 0;
+//     const itemDocs = [];
+
+//     await session.withTransaction(async () => {
+//       for (const it of cleanItems) {
+//         // console.log("Processing item it:", JSON.stringify(it, null, 2));
+
+//         const {
+//           productId,
+//           variantSize,
+//           variantIndex,
+//           quantity,
+//           purchasePrice,
+//           tax = 0,
+//         } = it;
+
+//         const product = await Product.findById(productId).session(session);
+//         if (!product) throw new Error(`Product ${productId} not found`);
+
+//         let matchedVariant = null;
+//         let variantPos = -1;
+//         if (Array.isArray(product.variants) && product.variants.length > 0) {
+//           if (typeof variantIndex === "number") {
+//             variantPos = variantIndex;
+//             matchedVariant = product.variants[variantIndex];
+//           } else if (variantSize) {
+//             variantPos = product.variants.findIndex((v) => v.size === variantSize);
+//             if (variantPos !== -1) {
+//               matchedVariant = product.variants[variantPos];
+//             }
+//           }
+//         }
+
+//         if (matchedVariant) {
+//           product.variants[variantPos].stock =
+//             (product.variants[variantPos].stock || 0) + Number(quantity);
+//           product.stock = product.variants.reduce(
+//             (s, v) => s + (v.stock || 0),
+//             0
+//           );
+//         } else {
+//           product.stock = (product.stock || 0) + Number(quantity);
+//         }
+
+//         await product.save({ session });
+
+//         await InventoryTransaction.create(
+//           [
+//             {
+//               product: product._id,
+//               variantSize: matchedVariant ? matchedVariant.size : null,
+//               change: Number(quantity),
+//               reason: "purchase",
+//               referenceModel: "Purchase",
+//               createdBy: userId,
+//             },
+//           ],
+//           { session }
+//         );
+
+//         const lot = new InventoryLot({
+//           purchase: null,
+//           product: product._id,
+//           variantSize: matchedVariant ? matchedVariant.size : null,
+//           remainingQty: Number(quantity),
+//           unitCost: Number(purchasePrice),
+//           receivedAt: new Date(),
+//         });
+//         await lot.save({ session });
+
+//         const itemSubtotal = Number(purchasePrice) * Number(quantity);
+//         const itemTaxAmount = Number(tax) || 0;
+//         subTotal += itemSubtotal;
+//         totalTax += itemTaxAmount;
+//         totalQuantity += Number(quantity);
+
+//         const itemDoc = {
+//           product: product._id,
+//           variantSize: matchedVariant ? matchedVariant.size : undefined,
+//           variantIndex: variantPos,
+//           quantity: Number(quantity),
+//           purchasePrice: Number(purchasePrice),
+//           tax: Number(itemTaxAmount),
+//           subtotal: itemSubtotal + itemTaxAmount,
+//         };
+
+//         itemDocs.push(itemDoc);
+//         // console.log("Added itemDoc:", JSON.stringify(itemDoc, null, 2));
+//       }
+
+//       // totalAmount with tax persent
+//       const totalAmount = subTotal * totalTax / 100 ;
+//       const createdArr = await Purchase.create(
+//         [
+//           {
+//             invoiceNumber: genInvoiceNumber(),
+//             vendor: vendor._id,
+//             items: itemDocs,
+//             totalQuantity,
+//             subTotal,
+//             totalTax,
+//             totalAmount,
+//             paymentMethod,
+//             notes,
+//             invoiceFiles,
+//             createdBy: userId,
+//           },
+//         ],
+//         { session }
+//       );
+
+//       const purchaseDoc = createdArr[0];
+//       // console.log("Purchase doc saved:", JSON.stringify(purchaseDoc, null, 2));
+
+//       await InventoryLot.updateMany(
+//         { purchase: null, product: { $in: itemDocs.map((i) => i.product) } },
+//         { $set: { purchase: purchaseDoc._id } },
+//         { session }
+//       );
+
+//       await InventoryTransaction.updateMany(
+//         {
+//           referenceModel: "Purchase",
+//           reference: { $exists: false },
+//           createdBy: userId,
+//           reason: "purchase",
+//         },
+//         { $set: { reference: purchaseDoc._id } },
+//         { session }
+//       );
+
+//       res.status(201).json({ message: "Purchase created", purchase: purchaseDoc });
+//     });
+//   } catch (err) {
+//     console.error("createPurchase error:", err);
+//     res.status(500).json({ message: err.message || "Server error" });
+//   } finally {
+//     session.endSession();
+//   }
+// };
+
 exports.createPurchase = async (req, res) => {
   const session = await mongoose.startSession();
   try {
     const userId = "68afebc726009740870c1b01";
     const { vendorId, items, paymentMethod, notes, invoiceFiles } = req.body;
-
-    // console.log("Received body:", JSON.stringify(req.body, null, 2));
 
     const cleanItems = (items || []).filter(
       (item) =>
@@ -30,8 +198,6 @@ exports.createPurchase = async (req, res) => {
         Number(item.quantity) > 0 &&
         Number(item.purchasePrice) >= 0
     );
-
-    // console.log("cleanItems:", JSON.stringify(cleanItems, null, 2));
 
     if (!vendorId || cleanItems.length === 0) {
       return res.status(400).json({
@@ -51,15 +217,13 @@ exports.createPurchase = async (req, res) => {
 
     await session.withTransaction(async () => {
       for (const it of cleanItems) {
-        // console.log("Processing item it:", JSON.stringify(it, null, 2));
-
         const {
           productId,
           variantSize,
           variantIndex,
           quantity,
           purchasePrice,
-          tax = 0,
+          tax = 0, // tax is now percentage (e.g., 5 means 5%)
         } = it;
 
         const product = await Product.findById(productId).session(session);
@@ -117,7 +281,9 @@ exports.createPurchase = async (req, res) => {
         await lot.save({ session });
 
         const itemSubtotal = Number(purchasePrice) * Number(quantity);
-        const itemTaxAmount = Number(tax) || 0;
+        const itemTaxAmount = itemSubtotal * (Number(tax) / 100); // ✅ tax as percentage
+        const itemTotal = itemSubtotal + itemTaxAmount;
+
         subTotal += itemSubtotal;
         totalTax += itemTaxAmount;
         totalQuantity += Number(quantity);
@@ -128,16 +294,16 @@ exports.createPurchase = async (req, res) => {
           variantIndex: variantPos,
           quantity: Number(quantity),
           purchasePrice: Number(purchasePrice),
-          tax: Number(itemTaxAmount),
-          subtotal: itemSubtotal + itemTaxAmount,
+          tax: Number(tax), // Save tax percentage for reference
+          taxAmount: itemTaxAmount, // Save actual tax value
+          subtotal: itemTotal,
         };
 
         itemDocs.push(itemDoc);
-        // console.log("Added itemDoc:", JSON.stringify(itemDoc, null, 2));
       }
 
-      // totalAmount with tax persent
-      const totalAmount = subTotal * totalTax / 100 ;
+      const totalAmount = subTotal + totalTax; // ✅ total = subtotal + tax
+
       const createdArr = await Purchase.create(
         [
           {
@@ -158,7 +324,6 @@ exports.createPurchase = async (req, res) => {
       );
 
       const purchaseDoc = createdArr[0];
-      // console.log("Purchase doc saved:", JSON.stringify(purchaseDoc, null, 2));
 
       await InventoryLot.updateMany(
         { purchase: null, product: { $in: itemDocs.map((i) => i.product) } },
@@ -186,6 +351,7 @@ exports.createPurchase = async (req, res) => {
     session.endSession();
   }
 };
+
 
 exports.getPurchases = async (req, res) => {
   try {

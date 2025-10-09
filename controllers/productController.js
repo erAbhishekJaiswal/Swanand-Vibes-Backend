@@ -483,11 +483,34 @@ const searchProductforPurchase = async (req, res) => {
     Product.countDocuments(queryObj),
   ]);
 
+  // console.log(productlist);
+  
+
   if (!products.length) {
     return res
       .status(404)
       .json({ success: false, error: "No products found" });
   }
+
+  // Process products
+  // const products = productlist.map((product) => ({
+  //   id: product._id,
+  //   name: product.name,
+  //   brand: product.brand,
+  //   category: product.category?.name || product.category,
+  //   description: product.description,
+  //   rating: product.ratings,
+  //   price: product.price,
+  //   images: product.images[0].url,
+  //   variants: product.variants.map((v) => ({
+  //     id: v._id,
+  //     size: v.size,
+  //     price: v.price,
+  //     stock: v.stock,
+  //     // image: v.images[0].url,
+  //   })),
+  //   tax: product.tax
+  // }));
 
   res.status(200).json({
     success: true,
@@ -495,7 +518,7 @@ const searchProductforPurchase = async (req, res) => {
     limit: Number(limit),
     totalPages: Math.ceil(total / limit),
     totalItems: total,
-    data: products,
+    data: products
   });
 };
 

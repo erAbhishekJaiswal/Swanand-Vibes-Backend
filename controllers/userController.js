@@ -380,6 +380,18 @@ const userDashboard = async (req, res) => {
     // ✅ Top withdrawal users (assumed this is a utility function)
     const topWithdrawalUsers = await TopWithdrawalUsers();
 
+
+// ✅ Upline count (length of sponsorPath)
+const uplineCount = Array.isArray(user.sponsorPath) ? user.sponsorPath.length : 0;
+
+// ✅ Downline count (number of users where this user is in sponsorPath)
+const downlineCount = await User.countDocuments({ sponsorPath: user._id });
+
+// ✅ Total network count
+const totalNetwork = uplineCount + downlineCount;
+
+
+
     res.json({
       user: {
         id: user._id,
@@ -397,6 +409,9 @@ const userDashboard = async (req, res) => {
       orderPendingCount,
       orderCompletedCount,
       cartCount: cartItems,
+      uplineCount,
+      downlineCount,
+      totalNetwork,
       gifts,
       topWithdrawalUsers
     });

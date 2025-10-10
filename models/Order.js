@@ -38,7 +38,7 @@ const orderSchema = new mongoose.Schema({
   shippingMethod: {
     type: String,
     required: true,
-    enum: ["standard", "express", "next day"],
+    enum: ["standard", "express", "next day","self-pickup"],
     default: "standard",
   },
   paymentStatus: { type: String, enum: ["Pending", "Paid"], default: "Pending" },

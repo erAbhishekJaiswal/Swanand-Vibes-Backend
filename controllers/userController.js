@@ -157,7 +157,7 @@ const updateUserAddress = async (req, res) => {
 const getUpline = async (req, res) => {
   try {
     const userId = req.params.userId;
-    const user = await User.findById(userId).populate("sponsorPath", "name email role");
+    const user = await User.findById(userId).populate("sponsorPath", "name email role referredBy createdAt");
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -171,7 +171,7 @@ const getUpline = async (req, res) => {
 const getDownline = async (req, res) => {
   try {
     const userId = req.params.userId;
-    const downline = await User.find({ sponsorPath: userId }).select("name email role referredBy");
+    const downline = await User.find({ sponsorPath: userId }).select("name email role referredBy createdAt");
 
     res.json({ downline });
   } catch (error) {

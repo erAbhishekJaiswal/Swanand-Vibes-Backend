@@ -307,21 +307,21 @@ const TopWithdrawalUsers = async (req, res) => {
   }
 };
 
+
 const userDashboard = async (req, res) => {
   try {
-    const id = req.params.id; // userId from URL or token
-    const user = await User.findById(id);
+    const id = req.params.id;
+    const user = await User.findById(id).lean();
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     // ✅ Wallet Info
-    const wallet = await Wallet.findOne({ user: id });
+    const wallet = await Wallet.findOne({ user: id }).lean();
+    const walletBalance = wallet ? wallet.balance : 0;
 
-    let walletBalance = wallet ? wallet.balance : 0;
-
-    // Deposit stats
+    // ✅ Deposit stats
     const depositStats = await Wallet.aggregate([
       { $match: { user: user._id } },
       { $unwind: "$transactions" },
@@ -335,7 +335,7 @@ const userDashboard = async (req, res) => {
       }
     ]);
 
-    // Withdrawal stats
+    // ✅ Withdrawal stats
     const withdrawalStats = await Wallet.aggregate([
       { $match: { user: user._id } },
       { $unwind: "$transactions" },
@@ -349,12 +349,12 @@ const userDashboard = async (req, res) => {
       }
     ]);
 
-    const kycstatus = await Kyc.findOne({ userId: id });
+    // ✅ KYC Status
+    const kycstatus = await Kyc.findOne({ userId: id }).lean();
     const kycStatus = kycstatus ? kycstatus.status : "pending";
 
     // ✅ Order stats
     const orderCount = await Order.countDocuments({ user: id });
-    // ✅ Total order amount (sum of totalPrice across all orders)
     const totalOrderData = await Order.aggregate([
       { $match: { user: user._id } },
       {
@@ -366,15 +366,20 @@ const userDashboard = async (req, res) => {
     ]);
     const orderPendingCount = await Order.countDocuments({ user: id, deliveryStatus: "pending" });
     const orderCompletedCount = await Order.countDocuments({ user: id, deliveryStatus: "delivered" });
-    // cart items count
-    const cartCount = await Cart.countDocuments({ user: id });
-    // gifts list with valid date
-    const gifts = await Gift.find({ status: "active", validity: { $gte: new Date() } });
+
+    // ✅ Cart items count — assuming one active cart per user
+    const activeCart = await Cart.findOne({ user: user._id, status: 'active' }).lean();
+    const cartItems = activeCart ? activeCart.items.length : 0;
+
+    // ✅ Gifts with valid date
+    const gifts = await Gift.find({ status: "active", validity: { $gte: new Date() } }).lean();
+
+    // ✅ Order total amount
     const orderAmount = totalOrderData.length > 0 ? totalOrderData[0].totalOrderAmount : 0;
 
+    // ✅ Top withdrawal users (assumed this is a utility function)
     const topWithdrawalUsers = await TopWithdrawalUsers();
-    // // console.log(topWithdrawalUsers);
-    
+
     res.json({
       user: {
         id: user._id,
@@ -382,24 +387,121 @@ const userDashboard = async (req, res) => {
         email: user.email,
       },
       walletBalance,
-      depositCount: depositStats.length > 0 ? depositStats[0].depositCount : 0,
-      totalDeposits: depositStats.length > 0 ? depositStats[0].totalDeposits : 0,
-      withdrawalCount: withdrawalStats.length > 0 ? withdrawalStats[0].withdrawalCount : 0,
-      totalWithdrawals: withdrawalStats.length > 0 ? withdrawalStats[0].totalWithdrawals : 0,
+      depositCount: depositStats[0]?.depositCount || 0,
+      totalDeposits: depositStats[0]?.totalDeposits || 0,
+      withdrawalCount: withdrawalStats[0]?.withdrawalCount || 0,
+      totalWithdrawals: withdrawalStats[0]?.totalWithdrawals || 0,
       orderCount,
       kycStatus,
       totalOrderAmount: orderAmount,
-      orderAmount,
       orderPendingCount,
       orderCompletedCount,
-      cartCount,
+      cartCount: cartItems,
       gifts,
       topWithdrawalUsers
     });
   } catch (error) {
+    console.error("Dashboard Error:", error);
     res.status(500).json({ error: error.message });
   }
 };
+
+
+// const userDashboard = async (req, res) => {
+//   try {
+//     const id = req.params.id; // userId from URL or token
+//     const user = await User.findById(id);
+
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     // ✅ Wallet Info
+//     const wallet = await Wallet.findOne({ user: id });
+
+//     let walletBalance = wallet ? wallet.balance : 0;
+
+//     // Deposit stats
+//     const depositStats = await Wallet.aggregate([
+//       { $match: { user: user._id } },
+//       { $unwind: "$transactions" },
+//       { $match: { "transactions.type": "credit", "transactions.status": "completed" } },
+//       {
+//         $group: {
+//           _id: null,
+//           totalDeposits: { $sum: "$transactions.amount" },
+//           depositCount: { $sum: 1 }
+//         }
+//       }
+//     ]);
+
+//     // Withdrawal stats
+//     const withdrawalStats = await Wallet.aggregate([
+//       { $match: { user: user._id } },
+//       { $unwind: "$transactions" },
+//       { $match: { "transactions.status": { $in: ["withdrawal-requested", "withdrawal-approved"] } } },
+//       {
+//         $group: {
+//           _id: null,
+//           totalWithdrawals: { $sum: "$transactions.amount" },
+//           withdrawalCount: { $sum: 1 }
+//         }
+//       }
+//     ]);
+
+//     const kycstatus = await Kyc.findOne({ userId: id });
+//     const kycStatus = kycstatus ? kycstatus.status : "pending";
+
+//     // ✅ Order stats
+//     const orderCount = await Order.countDocuments({ user: id });
+//     // ✅ Total order amount (sum of totalPrice across all orders)
+//     const totalOrderData = await Order.aggregate([
+//       { $match: { user: user._id } },
+//       {
+//         $group: {
+//           _id: null,
+//           totalOrderAmount: { $sum: "$totalPrice" }
+//         }
+//       }
+//     ]);
+//     const orderPendingCount = await Order.countDocuments({ user: id, deliveryStatus: "pending" });
+//     const orderCompletedCount = await Order.countDocuments({ user: id, deliveryStatus: "delivered" });
+    
+//     // cart items count
+//     const userCart = await Cart.find({ user: user.id });
+//     const cartItems = userCart.items.length;
+//     // gifts list with valid date
+//     const gifts = await Gift.find({ status: "active", validity: { $gte: new Date() } });
+//     const orderAmount = totalOrderData.length > 0 ? totalOrderData[0].totalOrderAmount : 0;
+
+//     const topWithdrawalUsers = await TopWithdrawalUsers();
+//     // // console.log(topWithdrawalUsers);
+    
+//     res.json({
+//       user: {
+//         id: user._id,
+//         name: user.name,
+//         email: user.email,
+//       },
+//       walletBalance,
+//       depositCount: depositStats.length > 0 ? depositStats[0].depositCount : 0,
+//       totalDeposits: depositStats.length > 0 ? depositStats[0].totalDeposits : 0,
+//       withdrawalCount: withdrawalStats.length > 0 ? withdrawalStats[0].withdrawalCount : 0,
+//       totalWithdrawals: withdrawalStats.length > 0 ? withdrawalStats[0].totalWithdrawals : 0,
+//       orderCount,
+//       kycStatus,
+//       totalOrderAmount: orderAmount,
+//       orderAmount,
+//       orderPendingCount,
+//       orderCompletedCount,
+//       cartCount:cartItems,
+//       gifts,
+//       topWithdrawalUsers
+//     });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// };
 
 
 

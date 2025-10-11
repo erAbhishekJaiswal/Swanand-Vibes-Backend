@@ -11,7 +11,8 @@ const {
     deleteOrder,
     // cancelOrder
     cancelOrder,
-    generateInvoice
+    generateInvoice,
+    generateShippingLabel
 } = require("../controllers/orderController");
 
 router.post("/:userId", createOrder);
@@ -24,5 +25,6 @@ router.delete("/:id", deleteOrder);
 router.put("/cancel/:id", cancelOrder);
 // Generate invoice by orderId
 router.get("/:orderId/invoice", generateInvoice);
+router.get("/shipping-label/:id", generateShippingLabel);
 
 module.exports = router;

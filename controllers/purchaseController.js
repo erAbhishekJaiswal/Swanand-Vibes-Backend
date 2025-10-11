@@ -718,3 +718,38 @@ exports.profitLossReport = async (req, res) => {
     res.status(500).json({ message: error.message || "Server error" });
   }
 };
+
+// Update payment status of a purchase
+exports.updatePaymentStatus = async (req, res) => {
+  const { id } = req.params;
+  const { paymentStatus } = req.body;
+
+  // Validate ID
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: 'Invalid purchase ID' });
+  }
+
+  // Validate paymentStatus
+  const validStatuses = ['pending', 'paid', 'partial', 'cancelled'];
+  if (!validStatuses.includes(paymentStatus)) {
+    return res.status(400).json({ error: `Invalid paymentStatus. Must be one of: ${validStatuses.join(', ')}` });
+  }
+
+  try {
+    const updatedPurchase = await Purchase.findByIdAndUpdate(
+      id,
+      { paymentStatus },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedPurchase) {
+      return res.status(404).json({ error: 'Purchase not found' });
+    }
+
+    res.status(200).json({ message: 'Payment status updated successfully', purchase: updatedPurchase });
+  } catch (error) {
+    console.error('Error updating payment status:', error);
+    res.status(500).json({ error: 'Server error while updating payment status' });
+  }
+};
+

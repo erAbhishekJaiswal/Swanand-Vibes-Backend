@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {createPurchase, getPurchases, getPurchaseById, updatePurchaseStatus, deletePurchase} = require('../controllers/purchaseController');
+const {createPurchase, getPurchases, getPurchaseById, updatePurchaseStatus,updatePaymentStatus, deletePurchase} = require('../controllers/purchaseController');
 // const { isAdmin, protect } = require('../middleware/auth'); // assume these exist
 
 router.post('/', 
@@ -15,6 +15,8 @@ router.get('/:id',
 router.put('/:id/status',
     //  protect, isAdmin, 
      updatePurchaseStatus);
+
+router.put('/:id/payment-status', updatePaymentStatus);
 
 router.delete('/:id',
 //     //  protect, isAdmin, 

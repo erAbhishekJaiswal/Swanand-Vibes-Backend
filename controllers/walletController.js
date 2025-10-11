@@ -459,28 +459,146 @@ exports.completeWithdrawal = async (req, res) => {
 };
 
 // Export withdrawal report to Excel
+// exports.generateWithdrawalReport = async (req, res) => {
+//   try {
+//     const { start, end } = req.query;
+
+//     const startDate = start ? new Date(start) : new Date("1970-01-01");
+//     const endDate = end ? new Date(end) : new Date();
+
+//     const wallets = await Wallet.find({
+//       transactions: {
+//         $elemMatch: {
+//           status: {
+//             $in: [
+//               "withdrawal-requested",
+//               "withdrawal-approved",
+//               "withdrawal-rejected",
+//             ],
+//           },
+//           date: { $gte: startDate, $lte: endDate },
+//         },
+//       },
+//     }).populate("user", "name email mobile");
+
+//     const kycRecords = await Kyc.find().populate("userId", "name email mobile");
+//     const kycMap = {};
+//     kycRecords.forEach((kyc) => {
+//       if (kyc.userId?._id) {
+//         kycMap[kyc.userId._id.toString()] = kyc;
+//       }
+//     });
+
+//     const workbook = new ExcelJS.Workbook();
+//     const sheet = workbook.addWorksheet("Withdrawal Requests");
+
+//     sheet.columns = [
+//       { header: "User Name", key: "name", width: 20 },
+//       { header: "Email", key: "email", width: 25 },
+//       { header: "Mobile", key: "mobile", width: 20 },
+//       { header: "Wallet Balance", key: "balance", width: 15 },
+//       { header: "Withdrawal Amount", key: "amount", width: 15 },
+//       { header: "Transaction Type", key: "type", width: 15 },
+//       { header: "Status", key: "status", width: 20 },
+//       { header: "Date", key: "date", width: 20 },
+//       { header: "Aadhar Number", key: "adharNumber", width: 20 },
+//       { header: "Aadhar Name", key: "adharName", width: 20 },
+//       { header: "PAN Number", key: "panNumber", width: 20 },
+//       { header: "Bank Name", key: "bankName", width: 20 },
+//       { header: "Bank Account", key: "bankAccount", width: 20 },
+//       { header: "IFSC Code", key: "ifscCode", width: 20 },
+//       { header: "KYC Status", key: "kycStatus", width: 15 },
+//     ];
+
+//     wallets.forEach((wallet) => {
+//       if (!wallet.user) {
+//         console.warn("⚠️ Wallet has no user linked:", wallet._id);
+//         return;
+//       }
+
+//       wallet.transactions
+//         .filter(
+//           (txn) =>
+//             ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"]
+//               .includes(txn.status?.toLowerCase()) &&
+//             txn.date >= startDate &&
+//             txn.date <= endDate
+//         )
+//         .forEach((txn) => {
+//           const userId = wallet.user?._id?.toString();
+//           const kyc = userId ? kycMap[userId] : null;
+
+//           sheet.addRow({
+//             name: wallet.user?.name || "N/A",
+//             email: wallet.user?.email || "N/A",
+//             mobile: wallet.user?.mobile || "N/A",
+//             balance: wallet.balance || 0,
+//             type: txn.type || "N/A",
+//             amount: txn.amount || 0,
+//             status: txn.status || "N/A",
+//             date: txn.date ? txn.date.toISOString().split("T")[0] : "N/A",
+//             adharNumber: kyc?.adharNumber || "N/A",
+//             adharName: kyc?.adharName || "N/A",
+//             panNumber: kyc?.panNumber || "N/A",
+//             bankName: kyc?.bankName || "N/A",
+//             bankAccount: kyc?.bankAccount || "N/A",
+//             ifscCode: kyc?.ifscCode || "N/A",
+//             kycStatus: kyc?.status || "N/A",
+//           });
+//         });
+//     });
+
+//     res.setHeader(
+//       "Content-Type",
+//       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+//     );
+//     res.setHeader(
+//       "Content-Disposition",
+//       "attachment; filename=withdrawal-report.xlsx"
+//     );
+
+//     await workbook.xlsx.write(res);
+//     res.end();
+//   } catch (error) {
+//     console.error("❌ Error exporting withdrawal report:", error);
+//     res.status(500).send("Failed to generate withdrawal report");
+//   }
+// };
+
 exports.generateWithdrawalReport = async (req, res) => {
   try {
-    const { start, end } = req.query;
+    const { start, end, status } = req.query;
 
+    // 🗓️ Date Filters
     const startDate = start ? new Date(start) : new Date("1970-01-01");
     const endDate = end ? new Date(end) : new Date();
 
+    // 🧩 Status Filter
+    const allowedStatuses = [
+      "withdrawal-requested",
+      "withdrawal-approved",
+      "withdrawal-rejected",
+    ];
+
+    // If status query provided, split and validate; else use all allowed
+    const statusFilter = status
+      ? status
+          .split(",")
+          .map((s) => s.trim().toLowerCase())
+          .filter((s) => allowedStatuses.includes(s))
+      : allowedStatuses;
+
+    // 🧮 Fetch wallets containing transactions matching filter
     const wallets = await Wallet.find({
       transactions: {
         $elemMatch: {
-          status: {
-            $in: [
-              "withdrawal-requested",
-              "withdrawal-approved",
-              "withdrawal-rejected",
-            ],
-          },
+          status: { $in: statusFilter },
           date: { $gte: startDate, $lte: endDate },
         },
       },
     }).populate("user", "name email mobile");
 
+    // 🧾 Fetch KYC data and map by user
     const kycRecords = await Kyc.find().populate("userId", "name email mobile");
     const kycMap = {};
     kycRecords.forEach((kyc) => {
@@ -489,6 +607,7 @@ exports.generateWithdrawalReport = async (req, res) => {
       }
     });
 
+    // 📊 Create Excel Workbook
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Withdrawal Requests");
 
@@ -510,6 +629,7 @@ exports.generateWithdrawalReport = async (req, res) => {
       { header: "KYC Status", key: "kycStatus", width: 15 },
     ];
 
+    // 🧠 Loop through wallets and add rows
     wallets.forEach((wallet) => {
       if (!wallet.user) {
         console.warn("⚠️ Wallet has no user linked:", wallet._id);
@@ -519,8 +639,7 @@ exports.generateWithdrawalReport = async (req, res) => {
       wallet.transactions
         .filter(
           (txn) =>
-            ["withdrawal-requested", "withdrawal-approved", "withdrawal-rejected"]
-              .includes(txn.status?.toLowerCase()) &&
+            statusFilter.includes(txn.status?.toLowerCase()) &&
             txn.date >= startDate &&
             txn.date <= endDate
         )
@@ -548,13 +667,14 @@ exports.generateWithdrawalReport = async (req, res) => {
         });
     });
 
+    // 📤 Set response headers for download
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
     res.setHeader(
       "Content-Disposition",
-      "attachment; filename=withdrawal-report.xlsx"
+      `attachment; filename=withdrawal-report-${new Date().toISOString().split("T")[0]}.xlsx`
     );
 
     await workbook.xlsx.write(res);
@@ -564,6 +684,7 @@ exports.generateWithdrawalReport = async (req, res) => {
     res.status(500).send("Failed to generate withdrawal report");
   }
 };
+
 
 exports.getTopLargeAmountWithdrawalUsers = async (req, res) => {
   try {

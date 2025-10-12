@@ -482,72 +482,164 @@ const generateInvoice = async (req, res) => {
   }
 };
 
+
+// const generateShippingLabel = async (req, res) => {
+//   try {
+//     const orderId = req.params.id;
+
+//     const order = await Order.findById(orderId)
+//       .populate("user", "name email phone") // Adjust based on your user schema
+//       .populate("orderItems.product", "name");
+
+//     if (!order) return res.status(404).send("Order not found");
+
+//     // Create PDF
+//     const doc = new PDFDocument({ size: "A4", margin: 50 });
+
+//     // Set headers for PDF download
+//     res.setHeader("Content-Disposition", `attachment; filename=shipping-label-${orderId}.pdf`);
+//     res.setHeader("Content-Type", "application/pdf");
+
+//     // Pipe to response
+//     doc.pipe(res);
+
+//     // Store From (Your Store Info)
+//     doc.fontSize(12).text("FROM:", { underline: true });
+//     doc.text("Swanand Vibes");
+//     doc.text("123 Business Street");
+//     doc.text("City, State, Country");
+//     doc.text("Phone: +91-0000000000");
+//     doc.moveDown();
+
+//     // Shipping Info
+//     doc.fontSize(12).text("SHIP TO:", { underline: true });
+//     doc.text(`${order.user.name}`);
+//     const addr = order.shippingAddress;
+//     doc.text(`${addr.apartment || ""}, ${addr.address}`);
+//     doc.text(`${addr.city}, ${addr.state} - ${addr.postalCode}`);
+//     doc.text(`${addr.country}`);
+//     doc.text(`Phone: ${order.user.phone || "N/A"}`);
+//     doc.moveDown();
+
+//     // Order Info
+//     doc.fontSize(12).text(`Order ID: ${order._id}`);
+//     doc.text(`Payment Method: ${order.paymentMethod}`);
+//     doc.text(`Shipping Method: ${order.shippingMethod}`);
+//     doc.text(`Delivery Status: ${order.deliveryStatus}`);
+//     doc.text(`Total: ₹${order.totalPrice.toFixed(2)}`);
+//     doc.moveDown();
+
+//     // Products
+//     doc.fontSize(12).text("ITEMS:", { underline: true });
+//     order.orderItems.forEach((item, index) => {
+//       doc.text(
+//         `${index + 1}. ${item.name} (${item.size}) - Qty: ${item.qty}`
+//       );
+//     });
+
+//     // Footer or Notes
+//     doc.moveDown();
+//     doc.fontSize(10).text("Note: Please handle with care. Fragile item.");
+//     doc.text("Thank you for shopping with us!");
+
+//     // Finalize PDF
+//     doc.end();
+//   } catch (err) {
+//     console.error("Error generating shipping label:", err);
+//     res.status(500).send("Internal Server Error");
+//   }
+// };
+
+
+
 const generateShippingLabel = async (req, res) => {
   try {
     const orderId = req.params.id;
 
     const order = await Order.findById(orderId)
-      .populate("user", "name email phone") // Adjust based on your user schema
+      .populate("user", "name email phone")
       .populate("orderItems.product", "name");
 
     if (!order) return res.status(404).send("Order not found");
 
-    // Create PDF
     const doc = new PDFDocument({ size: "A4", margin: 50 });
 
-    // Set headers for PDF download
     res.setHeader("Content-Disposition", `attachment; filename=shipping-label-${orderId}.pdf`);
     res.setHeader("Content-Type", "application/pdf");
 
-    // Pipe to response
     doc.pipe(res);
 
-    // Store From (Your Store Info)
-    doc.fontSize(12).text("FROM:", { underline: true });
-    doc.text("Swanand Vibes");
+    // Set title
+    doc.fontSize(20).font("Helvetica-Bold").text("Shipping Label", { align: "center" });
+    doc.moveDown();
+
+    // Draw separator
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown();
+
+    // FROM Section
+    doc.fontSize(12).font("Helvetica-Bold").text("FROM:", { continued: false });
+    doc.font("Helvetica").text("Swanand Vibes");
     doc.text("123 Business Street");
     doc.text("City, State, Country");
     doc.text("Phone: +91-0000000000");
     doc.moveDown();
 
-    // Shipping Info
-    doc.fontSize(12).text("SHIP TO:", { underline: true });
-    doc.text(`${order.user.name}`);
+    // SHIP TO Section
+    doc.fontSize(12).font("Helvetica-Bold").text("SHIP TO:", { continued: false });
+    doc.font("Helvetica").text(`${order.user.name}`);
     const addr = order.shippingAddress;
-    doc.text(`${addr.apartment || ""}, ${addr.address}`);
+    doc.text(`${addr.apartment ? addr.apartment + ", " : ""}${addr.address}`);
     doc.text(`${addr.city}, ${addr.state} - ${addr.postalCode}`);
     doc.text(`${addr.country}`);
     doc.text(`Phone: ${order.user.phone || "N/A"}`);
     doc.moveDown();
 
-    // Order Info
-    doc.fontSize(12).text(`Order ID: ${order._id}`);
+    // Draw separator
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown();
+
+    // ORDER DETAILS
+    doc.fontSize(12).font("Helvetica-Bold").text("ORDER DETAILS:", { continued: false });
+    doc.font("Helvetica").fontSize(11);
+    doc.text(`Order ID: ${order._id}`);
     doc.text(`Payment Method: ${order.paymentMethod}`);
     doc.text(`Shipping Method: ${order.shippingMethod}`);
     doc.text(`Delivery Status: ${order.deliveryStatus}`);
     doc.text(`Total: ₹${order.totalPrice.toFixed(2)}`);
     doc.moveDown();
 
-    // Products
-    doc.fontSize(12).text("ITEMS:", { underline: true });
+    // ITEMS
+    doc.fontSize(12).font("Helvetica-Bold").text("ITEMS:", { continued: false });
+    doc.moveDown(0.5);
+
+    doc.font("Helvetica").fontSize(11);
     order.orderItems.forEach((item, index) => {
-      doc.text(
-        `${index + 1}. ${item.name} (${item.size}) - Qty: ${item.qty}`
-      );
+      const productName = item.product?.name || "Unnamed Product";
+      const size = item.size || "N/A";
+      doc.text(`${index + 1}. ${productName} (${size}) - Qty: ${item.qty}`);
     });
 
-    // Footer or Notes
     doc.moveDown();
-    doc.fontSize(10).text("Note: Please handle with care. Fragile item.");
+
+    // Draw separator
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown();
+
+    // NOTES
+    doc.fontSize(10).font("Helvetica-Oblique").fillColor("gray");
+    doc.text("Note: Please handle with care. Fragile item.");
     doc.text("Thank you for shopping with us!");
 
     // Finalize PDF
     doc.end();
+
   } catch (err) {
     console.error("Error generating shipping label:", err);
     res.status(500).send("Internal Server Error");
   }
 };
+
 
 
 

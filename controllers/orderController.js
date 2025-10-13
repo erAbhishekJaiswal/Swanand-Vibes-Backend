@@ -197,6 +197,7 @@ const getAllOrders = async (req, res) => {
           price: item.price,
           quantity: item.quantity,
           image: item.product?.image || item.image,
+          qty: item.qty,
         })),
         shippingAddress: order.shippingAddress,
         paymentMethod: order.paymentMethod,

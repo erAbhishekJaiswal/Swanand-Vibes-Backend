@@ -128,7 +128,7 @@ router.post("/request-otp", async (req, res) => {
     </div>
   </div>
 `;
-  sendSmtpEmail.sender = { name: "Swanand Vibes", email: "swanandvibes@swanandvibes.com" };
+  sendSmtpEmail.sender = { name: "Swanand Vibes", email: process.env.CLIENT_EMAIL };
   sendSmtpEmail.to = [{ email }];
 
   try {

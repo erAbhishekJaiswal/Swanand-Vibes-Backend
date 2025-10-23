@@ -593,7 +593,7 @@ const generateShippingLabel = async (req, res) => {
     doc.text(`${addr.apartment ? addr.apartment + ", " : ""}${addr.address}`);
     doc.text(`${addr.city}, ${addr.state} - ${addr.postalCode}`);
     doc.text(`${addr.country}`);
-    doc.text(`Phone: ${order.user.phone || "N/A"}`);
+    doc.text(`Phone: ${order.user.mobile || "N/A"}`);
     doc.moveDown();
 
     // Draw separator

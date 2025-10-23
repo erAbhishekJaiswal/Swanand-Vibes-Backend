@@ -3,7 +3,7 @@ const User = require("../models/User");
 const Wallet = require("../models/Wallet");
 const Order = require("../models/Order");
 
-const COMMISSION_LEVELS = [10, 6, 5, 4, 3, 3, 2, 2, 2, 1, 1, 1]; // 41%
+const COMMISSION_LEVELS = [10, 8, 8, 5, 3, 3, 2, 1, 1, 1, 1, 1]; // 41%
 
 const distributeCommission = async (orderId) => {
   const order = await Order.findById(orderId).populate("user");

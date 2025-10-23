@@ -11,7 +11,7 @@ exports.sendEmail = async (toEmail, subject, content) => {
 
   sendSmtpEmail.subject = subject;
   sendSmtpEmail.htmlContent = content;
-  sendSmtpEmail.sender = { name: "Your App", email: "man.of.iron786@gmail.com" };
+  sendSmtpEmail.sender = { name: "Your App", email: "swanandvibes@swanandvibes.com" };
   sendSmtpEmail.to = [{ email: toEmail }];
 
   try {

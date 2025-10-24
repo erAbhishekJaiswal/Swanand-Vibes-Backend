@@ -3,7 +3,13 @@ const cors = require('cors')
 const dotenv = require('dotenv')
 const db = require('./config/db')
 const app = express()
-app.use(cors())
+//cors origin from https://www.swanandvibes.com
+
+app.use(cors({
+  origin: 'https://www.swanandvibes.com'
+}))
+
+// app.use(cors())
 dotenv.config()
 db()
 

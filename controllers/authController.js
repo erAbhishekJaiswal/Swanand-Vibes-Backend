@@ -278,7 +278,12 @@ exports.requestOtp = async (req, res) => {
 
   // Check if user already exists
   const user = await User.findOne({ email });
-  if (!user) return res.status(400).json({ msg: "User Not exists" });
+  // if (!user) return res.status(400).json({ msg: "User Not exists" });
+  if (!user) {
+  // still respond positively to prevent email enumeration
+  return res.status(403).json({ message: "This email is not registered." });
+}
+
 
   // Generate a unique OTP
   const generateUniqueOtp = async () => {
@@ -349,7 +354,7 @@ exports.requestOtp = async (req, res) => {
     </div>
   </div>
 `;
-  sendSmtpEmail.sender = { name: "Swanand Vibes", email: "man.of.iron786@gmail.com" };
+  sendSmtpEmail.sender = { name: "Swanand Vibes", email: process.env.CLIENT_EMAIL };
   sendSmtpEmail.to = [{ email }];
 
   try {
@@ -369,22 +374,22 @@ exports.otpVerify = async (req, res) => {
 
   try {
       if (!email || !otp) {
-    return res.status(400).json({ message: "All fields are required" });
+    return res.json({ message: "All fields are required" });
   }
 
   // Check if email and OTP match
   const record = await Otp.findOne({ email, otp });
 
   if (!record) {
-    return res.status(400).json({ error: "Invalid OTP" });
+    return res.status(400).json({ message: "Invalid OTP" });
   }
 
   if (record.expiresAt < new Date()) {
-    return res.status(400).json({ error: "OTP expired" });
+    return res.status(400).json({ message: "OTP expired" });
   }
 
   if (record.verified) {
-    return res.status(400).json({ error: "OTP already used" });
+    return res.status(400).json({ message: "OTP already used" });
   }
 
   // Mark OTP as verified
@@ -393,10 +398,10 @@ exports.otpVerify = async (req, res) => {
 
   const user = await User.findOne({ email });
   if (!user) {
-    return res.status(400).json({ error: "User not found" });
+    return res.status(400).json({ message: "User not found" });
   }
   if (!user.refreshToken){
-    return res.status(400).json({ error: "User not found" });
+    return res.status(400).json({ message: "User not found" });
   }
 
   const resetToken = user.refreshToken || "not user before login";

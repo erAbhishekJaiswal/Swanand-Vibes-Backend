@@ -4,12 +4,13 @@ const dotenv = require('dotenv')
 const db = require('./config/db')
 const app = express()
 //cors origin from https://www.swanandvibes.com
+// allowed origin from https://www.swanandvibes.com
+// app.use(cors({
+//   origin: 'https://www.swanandvibes.com',
+//   credentials: true
+// }))
 
-app.use(cors({
-  origin: 'https://www.swanandvibes.com'
-}))
-
-// app.use(cors())
+app.use(cors())
 dotenv.config()
 db()
 

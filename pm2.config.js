@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: "swanandvibes",
-      script: "app.js", // Replace with your actual entry file if different
+      script: "index.js", // Replace with your actual entry file if different
       instances: 1,
       autorestart: true,
       watch: false,

@@ -1,8 +1,10 @@
 const express = require('express')
 const cors = require('cors')
 const dotenv = require('dotenv')
-const db = require('./config/db')
 const app = express()
+dotenv.config()
+const db = require('./config/db')
+
 //cors origin from https://www.swanandvibes.com
 // allowed origin from https://www.swanandvibes.com
 // app.use(cors({
@@ -10,9 +12,24 @@ const app = express()
 //   credentials: true
 // }))
 
-app.use(cors())
-dotenv.config()
+// app.use(cors())
 db()
+
+const allowedOrigins = [
+  'https://www.swanandvibes.com',
+  'http://localhost:5173'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 
 app.get('/api', (req, res) => {
   res.json({ message: 'Hello from the API!' })

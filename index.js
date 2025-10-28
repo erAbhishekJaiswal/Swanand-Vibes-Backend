@@ -17,6 +17,8 @@ db()
 
 const allowedOrigins = [
   'https://www.swanandvibes.com',
+  'https://swanandvibes.com',
+  'http://swanandvibes.com',
   'http://localhost:5173'
 ];
 

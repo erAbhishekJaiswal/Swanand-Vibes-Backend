@@ -581,9 +581,10 @@ const generateShippingLabel = async (req, res) => {
     // FROM Section
     doc.fontSize(12).font("Helvetica-Bold").text("FROM:", { continued: false });
     doc.font("Helvetica").text("Swanand Vibes");
-    doc.text("123 Business Street");
-    doc.text("City, State, Country");
-    doc.text("Phone: +91-0000000000");
+    doc.text("Yoganand society, sector 3, kharghar 410210");
+    doc.text("Navi Mumbai, Maharashtra, India");
+    doc.text("Phone: +91-9821611417");
+    doc.text("Email: swanandvibes@gmail.com");
     doc.moveDown();
 
     // SHIP TO Section

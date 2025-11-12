@@ -188,57 +188,148 @@ const removeFromCart = async (req, res) => {
   }
 };
 
+// const getCart = async (req, res) => {
+//   try {
+//     const userId = req.params.id;
+    
+//     if (!userId) {
+//       return res.status(400).json({
+//         success: false,
+//         error: 'User ID is required',
+//       });
+//     }
+
+//     const cart = await Cart.findOne({ user: userId })
+//       .populate('items.product', 'name brand images variants tax');
+    
+//     if (!cart) {
+//       // Return empty cart instead of error
+//       return res.status(200).json({
+//         success: true,
+//         data: {
+//           user: userId,
+//           items: [],
+//           total: 0
+//         },
+//         message: 'Cart is empty'
+//       });
+//     }
+
+//     // Check stock availability for each item
+//     for (let item of cart.items) {
+//       const product = await Product.findById(item.product);
+//       if (product) {
+//         const variant = product.variants.id(item.variantId);
+//         if (variant) {
+//           item._doc.availableStock = variant.stock;
+//           item._doc.isOutOfStock = variant.stock < item.qty;
+//         }
+//       }
+//     }
+
+//     res.status(200).json({
+//       success: true,
+//       data: cart,
+//     });
+//   } catch (error) {
+//     console.error('Error getting cart:', error);
+//     res.status(500).json({
+//       success: false,
+//       error: error.message,
+//     });
+//   }
+// };
+
+
+
 const getCart = async (req, res) => {
   try {
     const userId = req.params.id;
-    
+
     if (!userId) {
       return res.status(400).json({
         success: false,
-        error: 'User ID is required',
+        error: "User ID is required",
       });
     }
 
-    const cart = await Cart.findOne({ user: userId })
-      .populate('items.product', 'name brand images variants tax');
-    
+    let cart = await Cart.findOne({ user: userId });
+
     if (!cart) {
-      // Return empty cart instead of error
       return res.status(200).json({
         success: true,
-        data: {
-          user: userId,
-          items: [],
-          total: 0
-        },
-        message: 'Cart is empty'
+        data: { user: userId, items: [], total: 0 },
+        message: "Cart is empty",
       });
     }
 
-    // Check stock availability for each item
-    for (let item of cart.items) {
+    const updatedItems = [];
+
+    for (const item of cart.items) {
       const product = await Product.findById(item.product);
-      if (product) {
-        const variant = product.variants.id(item.variantId);
-        if (variant) {
-          item._doc.availableStock = variant.stock;
-          item._doc.isOutOfStock = variant.stock < item.qty;
-        }
+
+      if (!product) {
+        // Product deleted by admin — skip it
+        continue;
       }
+
+      let variant = product.variants.id(item.variantId);
+      const updatedItem = { ...item._doc };
+
+      if (variant) {
+        // ✅ Use updated variant info
+        updatedItem.price = variant.price;
+        updatedItem.size = variant.size;
+        updatedItem.image = variant.images?.[0]?.url || updatedItem.image;
+        updatedItem.availableStock = variant.stock;
+        updatedItem.isOutOfStock = variant.stock < item.qty;
+      } else {
+        // ✅ Fallback to main product info if no variant
+        updatedItem.price = product.price;
+        updatedItem.image = product.images?.[0]?.url || updatedItem.image;
+        updatedItem.availableStock = product.stock;
+        updatedItem.isOutOfStock = product.stock < item.qty;
+      }
+
+      updatedItem.name = product.name;
+      updatedItem.product = product._id;
+      updatedItem.productTax = product.tax || 0;
+
+      updatedItems.push(updatedItem);
     }
+
+    // ✅ Recalculate total with latest prices
+    const newTotal = updatedItems.reduce(
+      (sum, item) => sum + item.price * item.qty,
+      0
+    );
+
+    // ✅ Update cart in DB (optional, for persistence)
+    cart.items = updatedItems;
+    cart.total = newTotal;
+    await cart.save();
 
     res.status(200).json({
       success: true,
-      data: cart,
+      data: {
+        ...cart._doc,
+        items: updatedItems,
+        total: newTotal,
+      },
     });
   } catch (error) {
-    console.error('Error getting cart:', error);
+    console.error("Error getting cart:", error);
     res.status(500).json({
       success: false,
       error: error.message,
     });
   }
 };
+
+
+
+
+
 
 const clearCart = async (req, res) => {
   try {

@@ -32,7 +32,7 @@ router.post("/create-order", async (req, res) => {
 router.post("/verify", (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
-  const hmac = crypto.createHmac("sha256", "HPpAjpI1v5kPZh5BASZTP4rG");
+  const hmac = crypto.createHmac("sha256", process.env.CLIENT_RAZORPAY_KEY_SECRET);
   hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
   const generated_signature = hmac.digest("hex");
 

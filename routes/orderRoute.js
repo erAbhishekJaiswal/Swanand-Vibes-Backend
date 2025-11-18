@@ -12,9 +12,11 @@ const {
     // cancelOrder
     cancelOrder,
     generateInvoice,
-    generateShippingLabel
+    generateShippingLabel,
+    getOrders
 } = require("../controllers/orderController");
 
+router.get("/all", getOrders);
 router.post("/:userId", createOrder);
 router.get("/:id", getOrderById);
 router.get("/", getAllOrders);

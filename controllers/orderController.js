@@ -5,6 +5,125 @@ const PDFDocument = require("pdfkit");
 const { distributeCommission } = require("../utils/commissionService");
 const path = require("path");
 
+
+const getOrders = async (req, res) => {
+  try {
+    let {
+      page = 1,
+      limit = 10,
+      search = "",
+      paymentStatus,
+      paymentMethod,
+      deliveryStatus,
+      startDate,
+      endDate
+    } = req.query;
+
+    page = Number(page);
+    limit = Number(limit);
+
+    const skip = (page - 1) * limit;
+
+    // ------------------------------
+    // Build MongoDB Filter
+    // ------------------------------
+    const filter = {};
+
+    // 🔍 SEARCH filter
+    if (search) {
+      filter.$or = [
+        { "shippingAddress.address": { $regex: search, $options: "i" } },
+        { "shippingAddress.city": { $regex: search, $options: "i" } },
+        { "orderItems.name": { $regex: search, $options: "i" } }
+      ];
+    }
+
+    // 💳 Payment Status
+    if (paymentStatus) filter.paymentStatus = paymentStatus;
+
+    // 🏦 Payment Method
+    if (paymentMethod) filter.paymentMethod = paymentMethod;
+
+    // 🚚 Delivery Status
+    if (deliveryStatus) filter.deliveryStatus = deliveryStatus;
+
+    // 📅 DATE Range filter
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) filter.createdAt.$gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = end;
+      }
+    }
+
+    // -------------------------------------
+    // PAGINATED ORDERS LIST
+    // -------------------------------------
+    const orders = await Order.find(filter)
+      .select("totalPrice paymentStatus paymentMethod deliveryStatus createdAt")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const totalOrders = await Order.countDocuments(filter);
+
+    // -------------------------------------
+    // TOTAL REVENUE (ALL ORDERS)
+    // -------------------------------------
+    const totalRevenueAgg = await Order.aggregate([
+      { $match: filter },
+      { $group: { _id: null, totalAmount: { $sum: "$totalPrice" } } }
+    ]);
+
+    const totalAmount = totalRevenueAgg[0]?.totalAmount || 0;
+
+    // -------------------------------------
+    // TODAY'S REVENUE (ACCURATE)
+    // -------------------------------------
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const todayRevenueAgg = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startOfToday, $lte: endOfToday },
+          ...filter // include all existing filters except date
+        }
+      },
+      { $group: { _id: null, todayAmount: { $sum: "$totalPrice" } } }
+    ]);
+
+    const todayTotalAmount = todayRevenueAgg[0]?.todayAmount || 0;
+
+    // -------------------------------------
+    // RESPONSE
+    // -------------------------------------
+    res.status(200).json({
+      success: true,
+      page,
+      limit,
+      totalOrders,
+      totalAmount,
+      todayTotalAmount,
+      totalPages: Math.ceil(totalOrders / limit),
+      orders,
+    });
+
+  } catch (error) {
+    console.error("Get Orders Error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal Server Error",
+    });
+  }
+};
+
+
 const createOrder = async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -654,5 +773,6 @@ module.exports = {
   deleteOrder,
   cancelOrder,
   generateInvoice,
-  generateShippingLabel
+  generateShippingLabel,
+  getOrders
 };

@@ -38,21 +38,21 @@ app.get('/api', (req, res) => {
 })
 
 app.use(express.json())
-app.use('/auth', require('./routes/authRoute'))
-app.use('/products', require('./routes/productRoute'))
-app.use('/users', require('./routes/userRoute'))
-app.use('/user/kyc', require('./routes/kycRoute'))
-app.use('/user/cart', require('./routes/cartRoute'))
-app.use('/user/wallet', require('./routes/walletRoute'))
-app.use('/order', require('./routes/orderRoute'))
-app.use("/contact", require('./routes/contactRoutes'));
-app.use("/pay", require('./routes/payment'));
-app.use("/category", require('./routes/categoryRoute')); 
-app.use("/gallery", require('./routes/galleryRoutes'));
-app.use("/gift", require('./routes/giftRoutes'));
-app.use("/vendor", require('./routes/vendorRoute'));
-app.use("/purchase", require('./routes/purchaseRoutes'));
-app.use("/report", require('./routes/reportRoute'));
+app.use('/api/auth', require('./routes/authRoute'))
+app.use('/api/products', require('./routes/productRoute'))
+app.use('/api/users', require('./routes/userRoute'))
+app.use('/api/user/kyc', require('./routes/kycRoute'))
+app.use('/api/user/cart', require('./routes/cartRoute'))
+app.use('/api/user/wallet', require('./routes/walletRoute'))
+app.use('/api/order', require('./routes/orderRoute'))
+app.use("/api/contact", require('./routes/contactRoutes'));
+app.use("/api/pay", require('./routes/payment'));
+app.use("/api/category", require('./routes/categoryRoute')); 
+app.use("/api/gallery", require('./routes/galleryRoutes'));
+app.use("/api/gift", require('./routes/giftRoutes'));
+app.use("/api/vendor", require('./routes/vendorRoute'));
+app.use("/api/purchase", require('./routes/purchaseRoutes'));
+app.use("/api/report", require('./routes/reportRoute'));
 
 app.listen(5000, () => {
   console.log('Server is running on http://localhost:5000')

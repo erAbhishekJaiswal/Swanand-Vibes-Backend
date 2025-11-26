@@ -92,14 +92,56 @@ const getAllUsers = async (req, res) => {
 
 
 
+// const getUserById = async (req, res) => {
+//   try {
+//     const user = await User.findById(req.params.id);
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+//     res.json(user);
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+
 const getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const userId = req.params.id;
+
+    // First check if user exists (without populate)
+    const user = await User.findById(userId);
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.json(user);
+
+    // If referredBy exists → populate it
+    if (user.referredBy) {
+      try {
+        const populatedUser = await User.findById(userId)
+          .populate({
+            path: "referredBy",
+            select: "name email companyid referralCode" // choose fields to return
+          });
+
+        return res.json(populatedUser);
+      } catch (populateError) {
+        console.error("Populate error:", populateError);
+
+        // If population fails, return user without referredBy details
+        return res.json({
+          ...user.toObject(),
+          referredBy: user.referredBy // return raw ID fallback
+        });
+      }
+    }
+
+    // If no referredBy → return user normally
+    return res.json(user);
+
   } catch (error) {
+    console.error("Server error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

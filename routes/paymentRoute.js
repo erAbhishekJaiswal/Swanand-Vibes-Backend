@@ -8,11 +8,11 @@ const {
     updatePaymentStatus,
     deletePayment
 } = require("../controllers/paymentController");
-
-router.post("/", createPayment);
-router.get("/", getPayments);
-router.get("/:id", getPaymentById);
-router.put("/:id", updatePaymentStatus);
-router.delete("/:id", deletePayment);
+const { protect } = require("../middleware/authMiddlware");
+router.post("/",protect, createPayment);
+router.get("/", protect, getPayments);
+router.get("/:id", protect, getPaymentById);
+router.put("/:id", protect, updatePaymentStatus);
+router.delete("/:id", protect, deletePayment);
 
 module.exports = router;

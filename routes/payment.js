@@ -2,7 +2,7 @@
 const express = require("express");
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
-
+const { protect } = require("../middleware/authMiddlware");
 const router = express.Router();
 
 const razorpay = new Razorpay({
@@ -11,7 +11,7 @@ const razorpay = new Razorpay({
 });
 
 // Create order API
-router.post("/create-order", async (req, res) => {
+router.post("/create-order",protect,  async (req, res) => {
   try {
     const amount = Math.round(req.body.amount); // Ensure it's an integer
     const options = {
@@ -29,7 +29,7 @@ router.post("/create-order", async (req, res) => {
 });
 
 // Verify payment signature (optional for security)
-router.post("/verify", (req, res) => {
+router.post("/verify", protect, (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
   const hmac = crypto.createHmac("sha256", process.env.CLIENT_RAZORPAY_KEY_SECRET);

@@ -13,17 +13,20 @@ const {
   getAdminWallet
 } = require("../controllers/walletController");
 // const authMiddleware = require("../middleware/authMiddleware");
+const { protect } = require("../middleware/authMiddlware");
 
 const router = express.Router();
 
 router.get(
   "/requests",
+  protect,
   // authMiddleware,
   getWithdrawalRequests
 );
 
 router.get(
   "/withdrawal-report",
+  protect,
   // authMiddleware,
   generateWithdrawalReport
 );
@@ -31,6 +34,7 @@ router.get(
 //admin wallet get all transactions
 router.get(
   "/adminwallet",
+  protect,
   // authMiddleware,
   getAdminWallet
 );
@@ -38,18 +42,21 @@ router.get(
 // Get top 5 large withdrawal users
 router.get(
   "/top-large-amount-withdrawal-users",
+  protect,
   // authMiddleware,
   getTopLargeAmountWithdrawalUsers
 );
 
 router.get(
   "/allwallets",
+  protect,
   // authMiddleware,
   allwalletList
 );
 // Withdraw request
 router.post(
   "/:id/withdraw-request",
+  protect,
   // authMiddleware,
   requestWithdrawal
 );
@@ -57,29 +64,34 @@ router.post(
 // Get wallet balance + transactions
 router.get(
   "/:id",
+  protect,
   // authMiddleware,
   getWallet
 );
 
 router.delete(
   "/delete-withdraw-request",
+  protect,
   // authMiddleware,
   deleteWithdrawalRequest
 );
 
 router.put(
   "/:id/approve-withdrawal",
+  protect,
   // authMiddleware,
   approveWithdrawal
 );
 
 router.put(
   '/:id/reject-withdrawal',
+  protect,
   // authMiddleware,
   deleteWithdrawalRequest
 )
 router.put(
   '/:id/complete-withdrawal',
+  protect,
   // authMiddleware,
   completeWithdrawal
 );

@@ -10,9 +10,9 @@ const {
   deleteImage,
   getImagesByCategory,getAllgallery
 } = require("../controllers/galleryController");
-
+const { protect } = require("../middleware/authMiddlware");
 // Admin upload
-router.post("/", createImage);
+router.post("/", protect, createImage);
 
 // View
 router.get("/", getAllImages);
@@ -24,11 +24,13 @@ router.get("/:id", getImageById);
 
 // Update
 router.put("/:id", 
+  protect,
   // protect, isAdmin, upload.single("image"), 
   updateImage);
 
 // Delete
 router.delete("/:id",
+  protect,
   //  protect, isAdmin, 
    deleteImage);
 

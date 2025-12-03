@@ -15,16 +15,18 @@ const {
     generateShippingLabel,
     getOrders
 } = require("../controllers/orderController");
+// const { protect, isAdmin } = require("../middleware/authMiddlware");
+const { protect } = require("../middleware/authMiddlware");
 
-router.get("/all", getOrders);
-router.post("/:userId", createOrder);
-router.get("/:id", getOrderById);
-router.get("/", getAllOrders);
-router.get("/user/:userId", getUserOrders);
-router.put("/:id", updateOrder);
-router.delete("/:id", deleteOrder);
+router.get("/all", protect, getOrders);
+router.post("/:userId", protect, createOrder);
+router.get("/:id", protect, getOrderById);
+router.get("/", protect, getAllOrders);
+router.get("/user/:userId", protect, getUserOrders);
+router.put("/:id", protect, updateOrder);
+router.delete("/:id", protect, deleteOrder);
 // cancelOrder
-router.put("/cancel/:id", cancelOrder);
+router.put("/cancel/:id", protect, cancelOrder);
 // Generate invoice by orderId
 router.get("/:orderId/invoice", generateInvoice);
 router.get("/shipping-label/:id", generateShippingLabel);

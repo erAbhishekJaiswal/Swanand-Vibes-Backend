@@ -19,7 +19,8 @@ const allowedOrigins = [
   'https://www.swanandvibes.com',
   'https://swanandvibes.com',
   'http://swanandvibes.com',
-  'http://localhost:5173'
+  'http://localhost:5173',
+  'https://swanand-vibes.vercel.app',
 ];
 
 app.use(cors({
